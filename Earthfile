@@ -5,7 +5,7 @@ WORKDIR /workspace
 
 deps:
   RUN apt update -y
-  RUN apt install -y build-essential cmake
+  RUN apt install -y build-essential cmake clang git
 
 xar:
   FROM +deps
@@ -38,7 +38,7 @@ cctools:
     ARG triple=$architecture-apple-darwin$kernel_version
   END
   FROM +deps
-  RUN apt install -y clang llvm-dev uuid-dev git rename
+  RUN apt install -y llvm-dev uuid-dev rename
   ARG cctools_version=973.0.1
   ARG linker_verison=609
   GIT CLONE --branch $cctools_version-ld64-$linker_verison https://github.com/tpoechtrager/cctools-port .
@@ -55,7 +55,6 @@ cctools:
     --prefix=/cctools \
     --with-libtapi=/libtapi \
     --with-libxar=/libxar \
-    --disable-clang-as \
     --target=$triple
   # now that we've tricked autoconf by pretending to build for arm, let's _actually_ build for arm64
   # https://github.com/tpoechtrager/cctools-port/issues/6
@@ -65,6 +64,44 @@ cctools:
   # output arm64 artifacts as aarch64 so that the target triple is consistent with what clang/gcc will expect
   RUN rename "s/arm64-apple-darwin$kernel_version/aarch64-apple-darwin$kernel_version/" /cctools/bin/*
   SAVE ARTIFACT /cctools/*
+
+wrapper:
+  ARG --required sdk_version
+  ARG --required kernel_version
+  FROM +deps
+  RUN apt install -y
+  GIT CLONE https://github.com/tpoechtrager/osxcross .
+  WORKDIR wrapper
+  ENV VERSION=1.4
+  ENV SDK_VERSION=$sdk_version
+  ENV TARGET=darwin$kernel_version
+  ENV LINKER_VERSION=609
+  ENV X86_64H_SUPPORTED=0
+  ENV I386_SUPPORTED=0
+  ENV ARM_SUPPORTED=1
+  RUN make wrapper -j
+
+wrapper.clang:
+  ARG --required sdk_version
+  ARG --required kernel_version
+  FROM +wrapper --sdk_version=$sdk_version --kernel_version=$kernel_version
+  ARG compilers=clang clang++
+  FOR compiler IN $compilers
+    ENV TARGETCOMPILER=$compiler
+    RUN ./build_wrapper.sh
+  END
+  SAVE ARTIFACT /workspace/target/*
+
+wrapper.gcc:
+  ARG --required sdk_version
+  ARG --required kernel_version
+  FROM +wrapper --sdk_version=$sdk_version --kernel_version=$kernel_version
+  ARG compilers=gcc g++ gfortran
+  FOR compiler IN $compilers
+    ENV TARGETCOMPILER=$compiler
+    RUN ./build_wrapper.sh
+  END
+  SAVE ARTIFACT /workspace/target/*
 
 sdk:
   ARG --required version
@@ -82,7 +119,7 @@ gcc:
   RUN apt install -y gcc g++ zlib1g-dev libmpc-dev libmpfr-dev libgmp-dev flex file
 
   # TODO: this shouldn't be needed
-  RUN apt-get install -y --force-yes clang llvm-dev libxml2-dev uuid-dev libssl-dev bash patch make tar xz-utils bzip2 gzip sed cpio libbz2-dev zlib1g-dev
+  RUN apt-get install -y --force-yes llvm-dev libxml2-dev uuid-dev libssl-dev bash patch make tar xz-utils bzip2 gzip sed cpio libbz2-dev zlib1g-dev
 
   IF [ $architecture = "aarch64" ]
     GIT CLONE --branch master-wip-apple-si https://github.com/iains/gcc-darwin-arm64 gcc
@@ -92,10 +129,14 @@ gcc:
     RUN false
   END
 
+  COPY (+wrapper.clang/ --kernel_version=$kernel_version --sdk_version=$sdk_version) /osxcross
+  ENV PATH=$PATH:/osxcross/bin
   COPY (+cctools/ --kernel_version=$kernel_version) /cctools
-  ENV PATH=$PATH:/cctools/bin/
-  
+  ENV PATH=$PATH:/cctools/bin
+
   COPY (+sdk/ --version=$sdk_version) /sdk
+  RUN mkdir -p /osxcross/SDK
+  RUN ln -s /sdk /osxcross/SDK/MacOSX$sdk_version.sdk
 
   # TODO: I think we can remove these
   COPY +xar/ /sdk/usr
