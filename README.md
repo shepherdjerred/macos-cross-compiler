@@ -22,22 +22,22 @@ earthly +image
 
 ## Compatibility
 
-This project can build for macOS on both x86_64 and arm64 archtictures, regardless of the host architecture.
+This project can build for macOS on both x86_64 and aarch64 archtictures, regardless of the host architecture.
 
 |              | Linux x86_64 | Linux arm64 |
 |--------------|--------------|-------------|
 | macOS x86_64 | ✅            | ✅           |
-| macOS arm64  | ✅            | ✅           |
+| macOS aarch64  | ✅            | ✅           |
 
-It supports the following languages:
+**Note:** aarch64 is Apple's internal name for arm64. They're used interchangably, but aarch64 is more correct when referring to macOS on arm64.
 
-* C (up to C17)
+This project supports the following languages:
+
+* C (up to C 17)
 * C++ (up to C++ 20)
-* Objective C
-* Objective C++
 * Fortran (up to Fortran 2018)
 
-It supports the following versions of macOS:
+This project supports the following versions of macOS:
 
 * [x] macOS 11 Big Sur
 * [x] macOS 12 Monterey
@@ -47,7 +47,7 @@ It supports the following versions of macOS:
 
 ## Technical Details
 
-This repository is essentially a nice wrapper around the following projects:
+This repository is essentially a wrapper around the following projects:
 
 * <https://github.com/tpoechtrager/apple-libtapi>
 * <https://github.com/tpoechtrager/cctools-port>

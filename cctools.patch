@@ -1,0 +1,13 @@
+diff --git a/cctools/ld64/src/ld/PlatformSupport.cpp b/cctools/ld64/src/ld/PlatformSupport.cpp
+index 4869542..e081478 100644
+--- a/cctools/ld64/src/ld/PlatformSupport.cpp
++++ b/cctools/ld64/src/ld/PlatformSupport.cpp
+@@ -105,7 +105,7 @@ void VersionSet::checkObjectCrosslink(const VersionSet& objectPlatforms, const s
+                 if (enforce == PlatEnforce::warnInternalErrorExternal) {
+                     enforce = (internalSDK ? PlatEnforce::warning : PlatEnforce::error);
+                 }
+-                if ( platformMismatchesAreWarning && (enforce == PlatEnforce::error) )
++                if ( true && (enforce == PlatEnforce::error) )
+                     enforce = PlatEnforce::warning;
+                 switch (enforce) {
+                     case PlatEnforce::allow:
