@@ -82,15 +82,34 @@ gcc:
     --prefix=/gcc \
     --with-system-zlib \
     --disable-multilib
-  RUN make -j2
+  RUN make -j
   RUN make install
   SAVE ARTIFACT /gcc/*
 
 image:
-  ARG architecture=aarch64
+  ARG architectures=aarch64 x86_64
   ARG sdk_version=13.0
   ARG kernel_version=22
   FROM ubuntu:jammy
   RUN apt update
-  COPY +gcc/* /usr/local/bin
-  COPY +cctools/* /usr/local/bin
+  RUN apt install -y clang
+  FOR architecture IN $architectures
+    COPY (+gcc/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version) /usr/local
+    COPY (+cctools/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version) /usr/local
+  END
+  COPY (+sdk/ --version=$sdk_version) /sdk
+  SAVE IMAGE macos-cross-compiler
+
+test:
+  ARG architectures=aarch64 x86_64
+  ARG sdk_version=13.0
+  ARG kernel_version=22
+  FROM +image
+  COPY samples samples
+  FOR architecture IN architectures
+    RUN gcc --target=$architecture-apple-darwin$kernel_version samples/hello.c -o hello
+    RUN gcc --target=$architecture-apple-darwin$kernel_version samples/hello.cpp -o hello
+    RUN gfortran --target=$architecture-apple-darwin$kernel_version samples/hello.f90 -o hello
+    RUN clang --target=$architecture-apple-darwin$kernel_version samples/hello.c -o hello
+    RUN clang++ --target=$architecture-apple-darwin$kernel_version samples/hello.cpp -o hello
+  END
