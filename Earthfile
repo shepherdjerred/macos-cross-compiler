@@ -9,9 +9,11 @@ deps:
 
 xar:
   FROM +deps
+  ARG --required target_sdk_version
   RUN apt install -y libxml2-dev libssl-dev zlib1g-dev
   GIT CLONE https://github.com/tpoechtrager/xar .
   WORKDIR xar
+  ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   RUN ./configure --prefix=/xar
   RUN make -j
   RUN make install
@@ -20,8 +22,10 @@ xar:
 libtapi:
   FROM +deps
   RUN apt install -y python3
+  ARG --required target_sdk_version
   ARG version=1100.0.11
   GIT CLONE --branch $version https://github.com/tpoechtrager/apple-libtapi .
+  ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   ENV INSTALLPREFIX=/libtapi
   RUN ./build.sh
   RUN ./install.sh
@@ -30,6 +34,7 @@ libtapi:
 cctools:
   ARG --required architecture
   ARG --required kernel_version
+  ARG --required target_sdk_version
   # autoconf does not recognize aarch64 -- use arm instead
   # https://github.com/tpoechtrager/cctools-port/issues/6
   IF [ $architecture = "aarch64" ]
@@ -37,20 +42,16 @@ cctools:
   ELSE
     ARG triple=$architecture-apple-darwin$kernel_version
   END
+  # ARG triple=x86_64-apple-darwin$kernel_version
   FROM +deps
   RUN apt install -y llvm-dev uuid-dev rename
   ARG cctools_version=973.0.1
   ARG linker_verison=609
   GIT CLONE --branch $cctools_version-ld64-$linker_verison https://github.com/tpoechtrager/cctools-port .
-  # TODO: remove the need for this patch... somehow
-  # https://github.com/iains/gcc-darwin-arm64/issues/102
-  IF [ $architecture = "aarch64" ]
-    COPY cctools.patch .
-    RUN git apply cctools.patch
-  END
-  COPY +xar/ /xar
-  COPY +libtapi/ /libtapi
+  COPY (+xar/ --target_sdk_version=$target_sdk_version) /xar
+  COPY (+libtapi/ --target_sdk_version=$target_sdk_version) /libtapi
   WORKDIR cctools
+  ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   RUN ./configure \
     --prefix=/cctools \
     --with-libtapi=/libtapi \
@@ -61,13 +62,19 @@ cctools:
   RUN find . -name Makefile -print0 | xargs -0 sed -i "s/arm-apple-darwin$kernel_version/arm64-apple-darwin$kernel_version/g"
   RUN make -j
   RUN make install
-  # output arm64 artifacts as aarch64 so that the target triple is consistent with what clang/gcc will expect
-  RUN rename "s/arm64-apple-darwin$kernel_version/aarch64-apple-darwin$kernel_version/" /cctools/bin/*
+  # link aarch64 artifacts so that the target triple is consistent with what clang/gcc will expect
+  IF [ $architecture = "aarch64" ]
+    FOR file IN $(ls /cctools/bin/*)
+      RUN /bin/bash -c "ln -s $file \${file/arm64/"aarch64"} "
+    END
+  END
+  ENV PATH=$PATH:/cctools/bin
   SAVE ARTIFACT /cctools/*
 
 wrapper:
   ARG --required sdk_version
   ARG --required kernel_version
+  ARG --required target_sdk_version
   FROM +deps
   RUN apt install -y
   GIT CLONE https://github.com/tpoechtrager/osxcross .
@@ -79,15 +86,18 @@ wrapper:
   ENV X86_64H_SUPPORTED=0
   ENV I386_SUPPORTED=0
   ENV ARM_SUPPORTED=1
+  ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   RUN make wrapper -j
 
 wrapper.clang:
   ARG --required sdk_version
   ARG --required kernel_version
-  FROM +wrapper --sdk_version=$sdk_version --kernel_version=$kernel_version
+  ARG --required target_sdk_version
+  FROM +wrapper --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version
   ARG compilers=clang clang++
   FOR compiler IN $compilers
     ENV TARGETCOMPILER=$compiler
+    ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
     RUN ./build_wrapper.sh
   END
   SAVE ARTIFACT /workspace/target/*
@@ -95,10 +105,12 @@ wrapper.clang:
 wrapper.gcc:
   ARG --required sdk_version
   ARG --required kernel_version
-  FROM +wrapper --sdk_version=$sdk_version --kernel_version=$kernel_version
+  ARG --required target_sdk_version
+  FROM +wrapper --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version
   ARG compilers=gcc g++ gfortran
   FOR compiler IN $compilers
     ENV TARGETCOMPILER=$compiler
+    ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
     RUN ./build_wrapper.sh
   END
   SAVE ARTIFACT /workspace/target/*
@@ -114,6 +126,8 @@ gcc:
   ARG --required architecture
   ARG --required sdk_version
   ARG --required kernel_version
+  ARG --required target_sdk_version
+  # this being set is very important! we'll be building iphone binaries otherwise.
   ARG triple=$architecture-apple-darwin$kernel_version
   FROM +deps
   RUN apt install -y gcc g++ zlib1g-dev libmpc-dev libmpfr-dev libgmp-dev flex file
@@ -129,9 +143,9 @@ gcc:
     RUN false
   END
 
-  COPY (+wrapper.clang/ --kernel_version=$kernel_version --sdk_version=$sdk_version) /osxcross
+  COPY (+wrapper.clang/ --kernel_version=$kernel_version --sdk_version=$sdk_version --target_sdk_version=$target_sdk_version) /osxcross
   ENV PATH=$PATH:/osxcross/bin
-  COPY (+cctools/ --kernel_version=$kernel_version) /cctools
+  COPY (+cctools/ --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /cctools
   ENV PATH=$PATH:/cctools/bin
 
   COPY (+sdk/ --version=$sdk_version) /sdk
@@ -139,16 +153,18 @@ gcc:
   RUN ln -s /sdk /osxcross/SDK/MacOSX$sdk_version.sdk
 
   # TODO: I think we can remove these
-  COPY +xar/ /sdk/usr
-  COPY +libtapi/ /sdk/usr
+  COPY (+xar/ --target_sdk_version=$target_sdk_version) /sdk/usr
+  COPY (+libtapi/ --target_sdk_version=$target_sdk_version) /sdk/usr
 
-  COPY +xar/lib /usr/local/lib
-  COPY +libtapi/lib /usr/local/lib
+  COPY (+xar/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
+  COPY (+libtapi/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
   RUN ldconfig
 
   # GCC requires that you build in a directory that is not a subdirectory of the source code
   # https://gcc.gnu.org/install/configure.html
   WORKDIR build
+
+  ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   RUN ../gcc/configure \
     --target=$triple \
     --with-sysroot=/sdk \
@@ -161,7 +177,7 @@ gcc:
     --prefix=/gcc \
     --with-system-zlib \
     --disable-multilib
-  RUN make -j4
+  RUN make -j
   RUN make install
   SAVE ARTIFACT /gcc/*
 
@@ -169,12 +185,13 @@ image:
   ARG architectures=aarch64 #x86_64
   ARG sdk_version=13.0
   ARG kernel_version=22
+  ARG target_sdk_version=11
   FROM ubuntu:jammy
   RUN apt update
   RUN apt install -y clang
   FOR architecture IN $architectures
-    COPY (+cctools/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version) /usr/local
-    COPY (+gcc/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version) /usr/local
+    COPY (+cctools/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local
+    COPY (+gcc/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local
   END
   COPY (+sdk/ --version=$sdk_version) /sdk
   SAVE IMAGE macos-cross-compiler
@@ -183,6 +200,7 @@ test:
   ARG architectures=aarch64 #x86_64
   ARG sdk_version=13.0
   ARG kernel_version=22
+  ARG target_sdk_version=11
   ARG triple=$architecture-apple-darwin$kernel_version
   FROM +image
   COPY samples samples

@@ -18,7 +18,43 @@ Install the requirements, then follow the instructions in the Usage section.
 ```bash
 # Create a Docker image tagged as `macos-cross-compiler`
 earthly +image
+
+# Start a Docker container
+docker run macos-cross-compiler
+
+# Compile something using gcc
+## for arm64
+aarch64-apple-darwin22-gcc samples/hello.c -o hello
+## for x86_64
+x86_64-apple-darwin-gcc samples/hello.c -o hello
+
+# Compile something using clang
+## for arm64
+aarch64-apple-darwin22-clang samples/hello.c -o hello
+## for x86_64
+x86_64-apple-darwin22-clang samples/hello.c -o hello
 ```
+
+### Compiler Executables
+
+The table below shows the name of the executable for each architecture/compiler pair.
+
+**Note:** By default the target kernel version is `darwin22`. You'll need to change `darwin22` if you choose to compile for another kernel version.
+
+|          | x86_64                         | aarch64                         |
+|----------|--------------------------------|---------------------------------|
+| clang    | x86_64-apple-darwin22-clang    | aarch64-apple-darwin22-clang    |
+| gcc      | x86_64-apple-darwin22-gcc      | aarch64-apple-darwin22-gcc      |
+| clang++  | x86_64-apple-darwin22-clang++  | aarch64-apple-darwin22-clang++  |
+| g++      | x86_64-apple-darwin22-g++      | aarch64-apple-darwin22-g++      |
+| rustc    | x86_64-apple-darwin22-rustc    | aarch64-apple-darwin22-rustc    |
+| gfortran | x86_64-apple-darwin22-gfortran | aarch64-apple-darwin22-gfortran |
+
+### cctools
+
+This project compiles [cctools](https://github.com/tpoechtrager/cctools-port), which is Apple's version of [binutils](https://www.gnu.org/software/binutils/). These programs are low-level utilities that are used by compilers, such as the archiver `ar`, the loader `ld`, and the assembler `as`.
+
+You probably don't need to run these programs directly, but if you do they are located at `/cctools/bin`, and they are also on the `PATH`.
 
 ## Compatibility
 
