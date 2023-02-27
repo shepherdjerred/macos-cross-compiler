@@ -175,7 +175,9 @@ gcc:
     --disable-libstdcxx-pch \ # TODO: maybe enable this
     --prefix=/gcc \
     --with-system-zlib \
-    --disable-multilib
+    --disable-multilib \
+    --with-ld=/cctools/bin/$triple-ld \
+    --with-as=/cctools/bin/$triple-as
   RUN make -j
   RUN make install
   SAVE ARTIFACT /gcc/*
@@ -193,12 +195,15 @@ image:
   # for gcc
   RUN apt install -y libmpc-dev libmpfr-dev
   FOR architecture IN $architectures
+    ENV triple=$architecture-apple-darwin$kernel_version
     COPY (+cctools/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /cctools
     COPY (+gcc/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /gcc
     COPY (+wrapper.clang/ --kernel_version=$kernel_version --sdk_version=$sdk_version --target_sdk_version=$target_sdk_version) /osxcross
     COPY (+wrapper.gcc/ --kernel_version=$kernel_version --sdk_version=$sdk_version --target_sdk_version=$target_sdk_version) /osxcross
-    # COPY (+gcc/lib --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local/lib
-    # COPY (+gcc/include --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local/include
+    COPY (+gcc/lib --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local/lib
+    COPY (+gcc/include --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local/include
+    COPY (+gcc/$triple/lib --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local/lib
+    COPY (+gcc/$triple/include --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local/include
   END
 
   COPY (+xar/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
@@ -218,13 +223,17 @@ test:
   ARG target_sdk_version=11
   FROM +image
   COPY samples samples
+  ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   FOR architecture IN $architectures
     ENV triple=$architecture-apple-darwin$kernel_version
     RUN $triple-clang --target=$triple samples/hello.c -o hello-clang
     RUN $triple-clang++ --target=$triple samples/hello.cpp -o hello-clang++
-    # TODO: need to do something so the standard library works
-    # RUN $triple-gcc samples/hello.c -o hello-gcc
-    # RUN $triple-g++ samples/hello.cpp -o hello-g++
-    RUN $triple-gfortran samples/hello.f90 -o hello-gfortran
+    RUN $triple-gcc -L/osxcross/SDK/MacOSX$sdk_version.sdk/usr/lib/ \
+      -I/osxcross/SDK/MacOSX$sdk_version.sdk/usr/include/ \
+      samples/hello.c -o hello-gcc
+    RUN $triple-g++ -L/osxcross/SDK/MacOSX$sdk_version.sdk/usr/lib/ \
+      -I/osxcross/SDK/MacOSX$sdk_version.sdk/usr/include/ \
+      samples/hello.cpp -o hello-g++
+    # RUN $triple-gfortran samples/hello.f90 -o hello-gfortran
     # RUN $triple-rustc samples/hello.rs -o hello-rustc
   END

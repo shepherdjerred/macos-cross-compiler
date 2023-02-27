@@ -1,10 +1,10 @@
 # macOS Cross Compiler
 
-This project allows you to compile C/C++ code on Linux that will be executed on macOS.
+This project allows you to compile C/C++ code on Linux that will be executed on macOS. This project is focused on supporting newer versions of macOS and C/C++. Older versions are not well tested.
 
 ## Quick Start
 
-Install the requirements, then follow the instructions in the Usage section.
+Install the requirements below, then follow the instructions in the usage section.
 
 ### Requirements
 
@@ -17,12 +17,22 @@ Install the requirements, then follow the instructions in the Usage section.
 
 ```bash
 # Create a Docker image tagged as `macos-cross-compiler`
+# The first run will take ~20 minutes on an M1 MacBook.
+# Subsequent runs are faster.
 earthly +image
-# Verify that the compilers work
+
+# Verify that the compilers work correctly
 earthly +test
 
-# Start a Docker container
-docker run macos-cross-compiler
+# Start a Docker container using the image we built earlier
+# Replace this with the path to the source you want to compile
+SOURCE_CODE=$PWD/samples
+docker run -v $SOURCE_CODE:/workspace/code macos-cross-compiler
+
+# Inside of the Docker container
+
+# Set the minimum version of macOS you want to target
+export MACOSX_DEPLOYMENT_TARGET=13
 
 # Compile something using gcc
 ## for arm64
@@ -30,11 +40,17 @@ aarch64-apple-darwin22-gcc samples/hello.c -o hello
 ## for x86_64
 x86_64-apple-darwin-gcc samples/hello.c -o hello
 
-# Compile something using clang
+# Compile using clang
 ## for arm64
 aarch64-apple-darwin22-clang samples/hello.c -o hello
 ## for x86_64
 x86_64-apple-darwin22-clang samples/hello.c -o hello
+
+# Compile using gfortran
+## for arm64
+aarch64-apple-darwin22-gfortran samples/hello.c -o hello
+## for x86_64
+x86_64-apple-darwin22-gfortran samples/hello.c -o hello
 ```
 
 ### Compiler Executables
@@ -49,8 +65,9 @@ The table below shows the name of the executable for each architecture/compiler 
 | **gcc**      | x86_64-apple-darwin22-gcc      | aarch64-apple-darwin22-gcc      |
 | **clang++**  | x86_64-apple-darwin22-clang++  | aarch64-apple-darwin22-clang++  |
 | **g++**      | x86_64-apple-darwin22-g++      | aarch64-apple-darwin22-g++      |
-| **rustc**    | x86_64-apple-darwin22-rustc    | aarch64-apple-darwin22-rustc    |
 | **gfortran** | x86_64-apple-darwin22-gfortran | aarch64-apple-darwin22-gfortran |
+
+The relevant compilers are located at `/osxcross/bin` and `/gcc/bin`. Both these directories are already on the `PATH` in the Docker container.
 
 ### cctools
 
@@ -108,7 +125,7 @@ This project supports the following languages:
 
 * C (up to C 17)
 * C++ (up to C++ 20)
-* Fortran (up to Fortran 2018)
+* Fortran (up to Fortran 2018) (needs confirmation)
 
 This project supports the following versions of macOS:
 
