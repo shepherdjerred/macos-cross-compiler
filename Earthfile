@@ -42,7 +42,6 @@ cctools:
   ELSE
     ARG triple=$architecture-apple-darwin$kernel_version
   END
-  # ARG triple=x86_64-apple-darwin$kernel_version
   FROM +deps
   RUN apt install -y llvm-dev uuid-dev rename
   ARG cctools_version=973.0.1
@@ -127,7 +126,6 @@ gcc:
   ARG --required sdk_version
   ARG --required kernel_version
   ARG --required target_sdk_version
-  # this being set is very important! we'll be building iphone binaries otherwise.
   ARG triple=$architecture-apple-darwin$kernel_version
   FROM +deps
   RUN apt install -y gcc g++ zlib1g-dev libmpc-dev libmpfr-dev libgmp-dev flex file
@@ -164,12 +162,13 @@ gcc:
   # https://gcc.gnu.org/install/configure.html
   WORKDIR build
 
+  # this being set is very important! we'll be building iphone binaries otherwise.
   ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   RUN ../gcc/configure \
     --target=$triple \
     --with-sysroot=/sdk \
     --disable-nls \
-    --enable-languages=c,c++ \ # ,fortran,objc,obj-c++ \ # TODO: enable rust?
+    --enable-languages=c,c++,fortran,objc,obj-c++ \
     --without-headers \
     --enable-lto \
     --enable-checking=release \
@@ -182,32 +181,50 @@ gcc:
   SAVE ARTIFACT /gcc/*
 
 image:
-  ARG architectures=aarch64 #x86_64
+  ARG architectures=aarch64 x86_64
   ARG sdk_version=13.0
   ARG kernel_version=22
   ARG target_sdk_version=11
   FROM ubuntu:jammy
+  COPY (+sdk/ --version=$sdk_version) /osxcross/SDK/MacOSX$sdk_version.sdk/
   RUN apt update
+  # this is the clang we'll actually be using to compile stuff with!
   RUN apt install -y clang
+  # for gcc
+  RUN apt install -y libmpc-dev libmpfr-dev
   FOR architecture IN $architectures
-    COPY (+cctools/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local
-    COPY (+gcc/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local
+    COPY (+cctools/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /cctools
+    COPY (+gcc/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /gcc
+    COPY (+wrapper.clang/ --kernel_version=$kernel_version --sdk_version=$sdk_version --target_sdk_version=$target_sdk_version) /osxcross
+    COPY (+wrapper.gcc/ --kernel_version=$kernel_version --sdk_version=$sdk_version --target_sdk_version=$target_sdk_version) /osxcross
+    # COPY (+gcc/lib --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local/lib
+    # COPY (+gcc/include --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local/include
   END
-  COPY (+sdk/ --version=$sdk_version) /sdk
+
+  COPY (+xar/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
+  COPY (+libtapi/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
+  RUN ldconfig
+
+  ENV PATH=$PATH:/gcc/bin
+  ENV PATH=$PATH:/cctools/bin
+  ENV PATH=$PATH:/osxcross/bin
+  WORKDIR /workspace
   SAVE IMAGE macos-cross-compiler
 
 test:
-  ARG architectures=aarch64 #x86_64
+  ARG architectures=aarch64 x86_64
   ARG sdk_version=13.0
   ARG kernel_version=22
   ARG target_sdk_version=11
-  ARG triple=$architecture-apple-darwin$kernel_version
   FROM +image
   COPY samples samples
-  FOR architecture IN architectures
-    RUN $triple-gcc samples/hello.c -o hello
-    RUN $triple-g++ samples/hello.cpp -o hello
-    RUN $triple-gfortran samples/hello.f90 -o hello
-    RUN clang --target=$triple samples/hello.c -o hello
-    RUN clang++ --target=$triple samples/hello.cpp -o hello
+  FOR architecture IN $architectures
+    ENV triple=$architecture-apple-darwin$kernel_version
+    RUN $triple-clang --target=$triple samples/hello.c -o hello-clang
+    RUN $triple-clang++ --target=$triple samples/hello.cpp -o hello-clang++
+    # TODO: need to do something so the standard library works
+    # RUN $triple-gcc samples/hello.c -o hello-gcc
+    # RUN $triple-g++ samples/hello.cpp -o hello-g++
+    RUN $triple-gfortran samples/hello.f90 -o hello-gfortran
+    # RUN $triple-rustc samples/hello.rs -o hello-rustc
   END

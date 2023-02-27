@@ -18,6 +18,8 @@ Install the requirements, then follow the instructions in the Usage section.
 ```bash
 # Create a Docker image tagged as `macos-cross-compiler`
 earthly +image
+# Verify that the compilers work
+earthly +test
 
 # Start a Docker container
 docker run macos-cross-compiler
@@ -43,12 +45,12 @@ The table below shows the name of the executable for each architecture/compiler 
 
 |          | x86_64                         | aarch64                         |
 |----------|--------------------------------|---------------------------------|
-| clang    | x86_64-apple-darwin22-clang    | aarch64-apple-darwin22-clang    |
-| gcc      | x86_64-apple-darwin22-gcc      | aarch64-apple-darwin22-gcc      |
-| clang++  | x86_64-apple-darwin22-clang++  | aarch64-apple-darwin22-clang++  |
-| g++      | x86_64-apple-darwin22-g++      | aarch64-apple-darwin22-g++      |
-| rustc    | x86_64-apple-darwin22-rustc    | aarch64-apple-darwin22-rustc    |
-| gfortran | x86_64-apple-darwin22-gfortran | aarch64-apple-darwin22-gfortran |
+| **clang**    | x86_64-apple-darwin22-clang    | aarch64-apple-darwin22-clang    |
+| **gcc**      | x86_64-apple-darwin22-gcc      | aarch64-apple-darwin22-gcc      |
+| **clang++**  | x86_64-apple-darwin22-clang++  | aarch64-apple-darwin22-clang++  |
+| **g++**      | x86_64-apple-darwin22-g++      | aarch64-apple-darwin22-g++      |
+| **rustc**    | x86_64-apple-darwin22-rustc    | aarch64-apple-darwin22-rustc    |
+| **gfortran** | x86_64-apple-darwin22-gfortran | aarch64-apple-darwin22-gfortran |
 
 ### cctools
 
@@ -56,14 +58,49 @@ This project compiles [cctools](https://github.com/tpoechtrager/cctools-port), w
 
 You probably don't need to run these programs directly, but if you do they are located at `/cctools/bin`, and they are also on the `PATH`.
 
+Tool list:
+
+* ObjectDump
+* ar
+* as
+* bitcode_strip
+* check_dylib
+* checksyms
+* cmpdylib
+* codesign_allocate
+* ctf_insert
+* dyldinfo
+* install_name_tool
+* ld
+* libtool
+* lipo
+* machocheck
+* makerelocs
+* mtoc
+* mtor
+* nm
+* nmedit
+* otool
+* pagestuff
+* ranlib
+* redo_prebinding
+* seg_addr_table
+* seg_hack
+* segedit
+* size
+* strings
+* strip
+* unwinddump
+* vtool
+
 ## Compatibility
 
 This project can build for macOS on both x86_64 and aarch64 archtictures, regardless of the host architecture.
 
 |              | Linux x86_64 | Linux arm64 |
 |--------------|--------------|-------------|
-| macOS x86_64 | ✅            | ✅           |
-| macOS aarch64  | ✅            | ✅           |
+| **macOS x86_64** | ✅            | ✅           |
+| **macOS aarch64**  | ✅            | ✅           |
 
 **Note:** aarch64 is Apple's internal name for arm64. They're used interchangably, but aarch64 is more correct when referring to macOS on arm64.
 
@@ -75,9 +112,9 @@ This project supports the following languages:
 
 This project supports the following versions of macOS:
 
-* [x] macOS 11 Big Sur
-* [x] macOS 12 Monterey
-* [x] macOS 13 Ventura
+* ✅ macOS 11 Big Sur
+* ✅ macOS 12 Monterey
+* ✅ macOS 13 Ventura
 
 **Note:** This project is tested on modern verisons of macOS, Clang, and GCC. It has not been tested with older versions of these softwares. If you need compatabiltiy with older versions, check out the [osxcross project](https://github.com/tpoechtrager/osxcross).
 
@@ -89,6 +126,14 @@ This repository is essentially a wrapper around the following projects:
 * <https://github.com/tpoechtrager/cctools-port>
 * <https://github.com/tpoechtrager/xar>
 * <https://github.com/iains/gcc-darwin-arm64>
+
+These resources were helpful when working on this project:
+
+* https://www.lurklurk.org/linkers/linkers.html
+* http://www.yolinux.com/TUTORIALS/LibraryArchives-StaticAndDynamic.html
+* https://gist.github.com/loderunner/b6846dd82967ac048439
+* http://clarkkromenaker.com/post/library-dynamic-loading-mac/
+* https://github.com/qyang-nj/llios
 
 ## Inspiration
 
