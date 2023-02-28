@@ -237,3 +237,21 @@ test:
     # RUN $triple-gfortran samples/hello.f90 -o hello-gfortran
     # RUN $triple-rustc samples/hello.rs -o hello-rustc
   END
+
+zig:
+  ARG sdk_version=13.0
+  FROM ubuntu:jammy
+  WORKDIR /workspace
+  COPY (+sdk/ --version=$sdk_version) /sdk
+  RUN apt update
+  RUN apt install -y wget xz-utils
+  RUN wget -O zig.tar.xz https://ziglang.org/download/0.10.1/zig-linux-aarch64-0.10.1.tar.xz
+  RUN tar -xf zig.tar.xz
+  RUN rm zig.tar.xz
+  RUN mv zig* zig
+  ENV PATH=$PATH:/workspace/zig
+  COPY samples samples
+  RUN zig cc -target aarch64-macos --sysroot=/sdk -I/sdk/usr/include -L/sdk/usr/lib -F/sdk/System/Library/Frameworks -framework CoreFoundation -o hello-c samples/hello.c
+  RUN zig c++ -target aarch64-macos --sysroot=/sdk -I/sdk/usr/include -I/sdk/usr/include/c++/v1/ -L/sdk/usr/lib -lc++ -F/sdk/System/Library/Frameworks -framework CoreFoundation -o hello-cpp samples/hello.cpp
+  SAVE ARTIFACT hello* AS LOCAL .
+  RUN false
