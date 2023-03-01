@@ -21,6 +21,7 @@ image:
   COPY (../+sdk/ --version=$sdk_version) /sdk
   COPY +zig/zig /usr/local/bin
   COPY zig-cc-$architecture-macos /usr/local/bin/
+  SAVE IMAGE macos-cross-compiler:zig
 
 image.rust:
   ARG --required sdk_version
@@ -29,13 +30,21 @@ image.rust:
   RUN apt install -y curl
   RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
   ENV PATH=$PATH:/root/.cargo/bin
+  SAVE IMAGE macos-cross-compiler:zig-rust
 
 test.c:
   ARG --required sdk_version
   ARG --required architecture
   FROM +image --sdk_version=$sdk_version --architecture=$architecture
   COPY ../+samples/hello.c hello.c
-  RUN zig cc -target $architecture-macos --sysroot=/sdk -I/sdk/usr/include -L/sdk/usr/lib -F/sdk/System/Library/Frameworks -framework CoreFoundation -o hello hello.c
+  RUN zig cc \
+    -target $architecture-macos \
+    --sysroot=/sdk \
+    -I/sdk/usr/include \
+    -L/sdk/usr/lib \
+    -F/sdk/System/Library/Frameworks \
+    -framework CoreFoundation \
+    -o hello hello.c
   SAVE ARTIFACT hello AS LOCAL out/$architecture/c/
 
 test.cpp:
@@ -43,7 +52,15 @@ test.cpp:
   ARG --required architecture
   FROM +image --sdk_version=$sdk_version --architecture=$architecture
   COPY ../+samples/hello.cpp hello.cpp
-  RUN zig c++ -target $architecture-macos --sysroot=/sdk -I/sdk/usr/include -I/sdk/usr/include/c++/v1/ -L/sdk/usr/lib -lc++ -F/sdk/System/Library/Frameworks -framework CoreFoundation -o hello hello.cpp
+  RUN zig c++ \
+    -target $architecture-macos \
+    --sysroot=/sdk -I/sdk/usr/include \
+    -I/sdk/usr/include/c++/v1/ \
+    -L/sdk/usr/lib \
+    -lc++ \
+    -F/sdk/System/Library/Frameworks \
+    -framework CoreFoundation \
+    -o hello hello.cpp
   SAVE ARTIFACT hello AS LOCAL out/$architecture/cpp/
 
 test.rust:
@@ -52,7 +69,8 @@ test.rust:
   FROM +image.rust --sdk_version=$sdk_version --architecture=$architecture
   RUN rustup target add $architecture-apple-darwin
   COPY ../+samples/rust .
-  RUN CC="zig-cc-$architecture-macos" cargo build --target $architecture-apple-darwin
+  ENV CC="zig-cc-$architecture-macos"
+  RUN cargo build --target $architecture-apple-darwin
   SAVE ARTIFACT target/$architecture-apple-darwin/debug/hello AS LOCAL out/$architecture/rust/
 
 test:
