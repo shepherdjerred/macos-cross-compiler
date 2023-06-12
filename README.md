@@ -27,7 +27,11 @@ earthly +test
 # Start a Docker container using the image we built earlier
 # Replace this with the path to the source you want to compile
 SOURCE_CODE=$PWD/samples
-docker run -v $SOURCE_CODE:/workspace/code macos-cross-compiler
+docker run -v $SOURCE_CODE:/workspace/code \
+  -w /workspace/code \
+  -it \
+  macos-cross-compiler \
+  /bin/bash
 
 # Inside of the Docker container
 
@@ -36,21 +40,25 @@ export MACOSX_DEPLOYMENT_TARGET=13
 
 # Compile something using gcc
 ## for arm64
-aarch64-apple-darwin22-gcc samples/hello.c -o hello
+aarch64-apple-darwin22-gcc hello.c -o hello
+aarch64-apple-darwin22-g++ hello.cpp -o hello
 ## for x86_64
-x86_64-apple-darwin-gcc samples/hello.c -o hello
+x86_64-apple-darwin-gcc hello.c -o hello
+x86_64-apple-darwin-g++ hello.cpp -o hello
 
 # Compile using clang
 ## for arm64
-aarch64-apple-darwin22-clang samples/hello.c -o hello
+aarch64-apple-darwin22-clang hello.c -o hello
+aarch64-apple-darwin22-clang hello.cpp -o hello
 ## for x86_64
-x86_64-apple-darwin22-clang samples/hello.c -o hello
+x86_64-apple-darwin22-clang hello.c -o hello
+x86_64-apple-darwin22-clang hello.cpp -o hello
 
 # Compile using gfortran
 ## for arm64
-aarch64-apple-darwin22-gfortran samples/hello.c -o hello
+aarch64-apple-darwin22-gfortran hello.f90 -o hello
 ## for x86_64
-x86_64-apple-darwin22-gfortran samples/hello.c -o hello
+x86_64-apple-darwin22-gfortran hello.f90 -o hello
 ```
 
 ### Compiler Executables
@@ -146,11 +154,11 @@ This repository is essentially a wrapper around the following projects:
 
 These resources were helpful when working on this project:
 
-* https://www.lurklurk.org/linkers/linkers.html
-* http://www.yolinux.com/TUTORIALS/LibraryArchives-StaticAndDynamic.html
-* https://gist.github.com/loderunner/b6846dd82967ac048439
-* http://clarkkromenaker.com/post/library-dynamic-loading-mac/
-* https://github.com/qyang-nj/llios
+* <https://www.lurklurk.org/linkers/linkers.html>
+* <http://www.yolinux.com/TUTORIALS/LibraryArchives-StaticAndDynamic.html>
+* <https://gist.github.com/loderunner/b6846dd82967ac048439>
+* <http://clarkkromenaker.com/post/library-dynamic-loading-mac/>
+* <https://github.com/qyang-nj/llios>
 
 ## Inspiration
 

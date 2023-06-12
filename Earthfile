@@ -119,6 +119,7 @@ sdk:
   FROM +deps
   COPY sdks/MacOSX$version.sdk.tar.xz .
   RUN tar -xf MacOSX$version.sdk.tar.xz
+  RUN mv MacOSX*.sdk MacOSX$version.sdk
   SAVE ARTIFACT MacOSX$version.sdk/*
 
 gcc:
@@ -136,7 +137,7 @@ gcc:
   IF [ $architecture = "aarch64" ]
     GIT CLONE --branch master-wip-apple-si https://github.com/iains/gcc-darwin-arm64 gcc
   ELSE IF [ $architecture = "x86_64" ]
-    GIT CLONE --branch releases/gcc-12 https://github.com/gcc-mirror/gcc gcc
+    GIT CLONE --branch releases/gcc-12.3.0 https://github.com/gcc-mirror/gcc gcc
   ELSE
     RUN false
   END
