@@ -26,18 +26,15 @@ earthly +test
 
 # Start a Docker container using the image we built earlier
 # Replace this with the path to the source you want to compile
-SOURCE_CODE=$PWD/samples
-docker run -v $SOURCE_CODE:/workspace/code \
+docker run -v $PWD/samples:/workspace/code \
+  --rm \
   -w /workspace/code \
+  -e MACOSX_DEPLOYMENT_TARGET=13 \
   -it \
   macos-cross-compiler \
   /bin/bash
 
 # Inside of the Docker container
-
-# Set the minimum version of macOS you want to target
-export MACOSX_DEPLOYMENT_TARGET=13
-
 # Compile something using gcc
 ## for arm64
 aarch64-apple-darwin22-gcc hello.c -o hello

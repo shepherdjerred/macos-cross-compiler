@@ -222,10 +222,10 @@ image:
     COPY (+gcc/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /gcc
     COPY (+wrapper.clang/ --kernel_version=$kernel_version --sdk_version=$sdk_version --target_sdk_version=$target_sdk_version) /osxcross
     COPY (+wrapper.gcc/ --kernel_version=$kernel_version --sdk_version=$sdk_version --target_sdk_version=$target_sdk_version) /osxcross
-    COPY (+gcc/lib --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local/lib
-    COPY (+gcc/include --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local/include
-    COPY (+gcc/$triple/lib --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local/lib
-    COPY (+gcc/$triple/include --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /usr/local/include
+    COPY (+gcc/lib --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk) /usr/local/lib
+    COPY (+gcc/include --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk) /usr/local/include
+    COPY (+gcc/$triple/lib --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk) /usr/local/lib
+    COPY (+gcc/$triple/include --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk) /usr/local/include
   END
 
   COPY (+xar/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
