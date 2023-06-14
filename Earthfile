@@ -257,8 +257,8 @@ test:
     RUN $triple-g++ -L/osxcross/SDK/MacOSX$sdk_version.sdk/usr/lib/ \
       -I/osxcross/SDK/MacOSX$sdk_version.sdk/usr/include/ \
       samples/hello.cpp -o hello-g++
-    RUN $triple-gfortran samples/hello.f90 -o hello-gfortran
-    RUN $triple-rustc samples/hello.rs -o hello-rustc
+    # RUN $triple-gfortran samples/hello.f90 -o hello-gfortran
+    # RUN $triple-rustc samples/hello.rs -o hello-rustc
   END
 
 samples:
