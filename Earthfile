@@ -126,9 +126,9 @@ sdk:
   ARG --required download_sdk
   FROM +deps
   IF [ $download_sdk = "true" ]
-    COPY sdks/MacOSX$version.sdk.tar.xz .
-  ELSE
     RUN wget https://github.com/joseluisq/macosx-sdks/releases/download/$version/MacOSX$version.sdk.tar.xz
+  ELSE
+    COPY sdks/MacOSX$version.sdk.tar.xz .
   END
   RUN tar -xf MacOSX$version.sdk.tar.xz
   RUN mv MacOSX*.sdk MacOSX$version.sdk
