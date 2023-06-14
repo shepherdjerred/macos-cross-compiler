@@ -16,14 +16,6 @@ Install the requirements below, then follow the instructions in the usage sectio
 ### Usage
 
 ```bash
-# Create a Docker image tagged as `macos-cross-compiler`
-# The first run will take ~20 minutes on an M1 MacBook.
-# Subsequent runs are faster.
-earthly +image
-
-# Verify that the compilers work correctly
-earthly +test
-
 # Start a Docker container using the image we built earlier
 # Replace this with the path to the source you want to compile
 docker run -v $PWD/samples:/workspace/code \
@@ -31,31 +23,45 @@ docker run -v $PWD/samples:/workspace/code \
   -w /workspace/code \
   -e MACOSX_DEPLOYMENT_TARGET=13 \
   -it \
-  macos-cross-compiler \
+  ghcr.io/shepherdjerred/macos-cross-compiler \
   /bin/bash
 
 # Inside of the Docker container
 # Compile something using gcc
 ## for arm64
-aarch64-apple-darwin22-gcc hello.c -o hello
-aarch64-apple-darwin22-g++ hello.cpp -o hello
+aarch64-apple-darwin22-gcc -L/osxcross/SDK/MacOSX13.0.sdk/usr/lib/ \
+      -I/osxcross/SDK/MacOSX13.0.sdk/usr/include/ \
+      hello.c -o hello
+aarch64-apple-darwin22-g++ -L/osxcross/SDK/MacOSX13.0.sdk/usr/lib/ \
+      -I/osxcross/SDK/MacOSX13.0.sdk/usr/include/ \
+      hello.cpp -o hello
 ## for x86_64
-x86_64-apple-darwin-gcc hello.c -o hello
-x86_64-apple-darwin-g++ hello.cpp -o hello
+x86_64-apple-darwin22-gcc -L/osxcross/SDK/MacOSX13.0.sdk/usr/lib/ \
+      -I/osxcross/SDK/MacOSX13.0.sdk/usr/include/ \
+      hello.c -o hello
+x86_64-apple-darwin22-g++ -L/osxcross/SDK/MacOSX13.0.sdk/usr/lib/ \
+      -I/osxcross/SDK/MacOSX13.0.sdk/usr/include/ \
+      hello.cpp -o hello
 
 # Compile using clang
 ## for arm64
-aarch64-apple-darwin22-clang hello.c -o hello
-aarch64-apple-darwin22-clang hello.cpp -o hello
+aarch64-apple-darwin22-clang --target=aarch64-apple-darwin22 hello.c -o hello
+aarch64-apple-darwin22-clang --target=aarch64-apple-darwin22 hello.cpp -o hello
 ## for x86_64
-x86_64-apple-darwin22-clang hello.c -o hello
-x86_64-apple-darwin22-clang hello.cpp -o hello
+x86_64-apple-darwin22-clang --target==x86_64-apple-darwin22 hello.c -o hello
+x86_64-apple-darwin22-clang --target==x86_64-apple-darwin22 hello.cpp -o hello
 
 # Compile using gfortran
 ## for arm64
 aarch64-apple-darwin22-gfortran hello.f90 -o hello
 ## for x86_64
 x86_64-apple-darwin22-gfortran hello.f90 -o hello
+
+# Compile using Rust
+## for arm64
+aarch64-apple-darwin22-rustc samples/hello.rs -o hello
+## for x86_64
+x86_64-apple-darwin22-rustc samples/hello.rs -o hello
 ```
 
 ### Compiler Executables
@@ -156,6 +162,18 @@ These resources were helpful when working on this project:
 * <https://gist.github.com/loderunner/b6846dd82967ac048439>
 * <http://clarkkromenaker.com/post/library-dynamic-loading-mac/>
 * <https://github.com/qyang-nj/llios>
+
+## Development
+
+```bash
+# Create a Docker image tagged as `shepherdjerred/macos-cross-compiler`
+# The first run will take ~20 minutes on an M1 MacBook.
+# Subsequent runs are faster.
+earthly +image
+
+# Verify that the compilers work correctly
+earthly +test
+```
 
 ## Inspiration
 
