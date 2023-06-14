@@ -7,7 +7,7 @@ pipeline:
   PIPELINE --push
   TRIGGER push main
   TRIGGER pr main
-  BUILD +image
+  BUILD +image --download_sdk=true
   BUILD +test
 
 deps:
@@ -123,13 +123,19 @@ wrapper.gcc:
 
 sdk:
   ARG --required version
+  ARG --required download_sdk
   FROM +deps
-  COPY sdks/MacOSX$version.sdk.tar.xz .
+  IF [ $download_sdk = "true" ]
+    COPY sdks/MacOSX$version.sdk.tar.xz .
+  ELSE
+    RUN wget https://github.com/joseluisq/macosx-sdks/releases/download/$version/MacOSX$version.sdk.tar.xz
+  END
   RUN tar -xf MacOSX$version.sdk.tar.xz
   RUN mv MacOSX*.sdk MacOSX$version.sdk
   SAVE ARTIFACT MacOSX$version.sdk/*
 
 gcc:
+  ARG --required download_sdk
   ARG --required architecture
   ARG --required sdk_version
   ARG --required kernel_version
@@ -154,7 +160,7 @@ gcc:
   COPY (+cctools/ --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /cctools
   ENV PATH=$PATH:/cctools/bin
 
-  COPY (+sdk/ --version=$sdk_version) /sdk
+  COPY (+sdk/ --version=$sdk_version --download_sdk=$download_sdk) /sdk
   RUN mkdir -p /osxcross/SDK
   RUN ln -s /sdk /osxcross/SDK/MacOSX$sdk_version.sdk
 
@@ -195,8 +201,9 @@ image:
   ARG sdk_version=13.0
   ARG kernel_version=22
   ARG target_sdk_version=11
+  ARG download_sdk=false
   FROM ubuntu:jammy
-  COPY (+sdk/ --version=$sdk_version) /osxcross/SDK/MacOSX$sdk_version.sdk/
+  COPY (+sdk/ --version=$sdk_version --download_sdk=$download_sdk) /osxcross/SDK/MacOSX$sdk_version.sdk/
   RUN apt update
   # this is the clang we'll actually be using to compile stuff with!
   RUN apt install -y clang
