@@ -3,6 +3,7 @@ PROJECT sjerred/macos-cross-compiler
 FROM ubuntu:jammy
 WORKDIR /workspace
 
+
 pipeline:
   PIPELINE --push
   TRIGGER push main
