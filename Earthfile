@@ -1,5 +1,5 @@
 VERSION 0.7
-PROJECT shepherdjerred/macos-cross-compiler
+PROJECT sjerred/macos-cross-compiler
 FROM ubuntu:jammy
 WORKDIR /workspace
 
