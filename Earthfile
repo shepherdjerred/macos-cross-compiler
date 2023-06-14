@@ -8,7 +8,7 @@ pipeline:
   TRIGGER push main
   TRIGGER pr main
   BUILD +image --download_sdk=true
-  BUILD +test
+  BUILD +test --download_sdk=true
 
 deps:
   RUN apt update -y
