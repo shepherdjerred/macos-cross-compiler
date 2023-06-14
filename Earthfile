@@ -1,7 +1,14 @@
 VERSION 0.7
-
+PROJECT shepherdjerred/macos-cross-compiler
 FROM ubuntu:jammy
 WORKDIR /workspace
+
+pipeline:
+  PIPELINE --push
+  TRIGGER push main
+  TRIGGER pr main
+  BUILD +image
+  BUILD +test
 
 deps:
   RUN apt update -y
@@ -215,7 +222,7 @@ image:
   ENV PATH=$PATH:/cctools/bin
   ENV PATH=$PATH:/osxcross/bin
   WORKDIR /workspace
-  SAVE IMAGE macos-cross-compiler
+  SAVE IMAGE --push ghcr.io/shepherdjerred/macos-cross-compiler:latest
 
 test:
   ARG architectures=aarch64 x86_64
@@ -235,8 +242,8 @@ test:
     RUN $triple-g++ -L/osxcross/SDK/MacOSX$sdk_version.sdk/usr/lib/ \
       -I/osxcross/SDK/MacOSX$sdk_version.sdk/usr/include/ \
       samples/hello.cpp -o hello-g++
-    # RUN $triple-gfortran samples/hello.f90 -o hello-gfortran
-    # RUN $triple-rustc samples/hello.rs -o hello-rustc
+    RUN $triple-gfortran samples/hello.f90 -o hello-gfortran
+    RUN $triple-rustc samples/hello.rs -o hello-rustc
   END
 
 samples:
