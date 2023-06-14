@@ -243,7 +243,8 @@ test:
   ARG sdk_version=13.0
   ARG kernel_version=22
   ARG target_sdk_version=11
-  FROM +image
+  ARG download_sdk=false
+  FROM (+image --architectures=$architectures --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download)
   COPY +samples/ samples/
   ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   FOR architecture IN $architectures
