@@ -121,12 +121,19 @@ wrapper.gcc:
   END
   SAVE ARTIFACT /workspace/target/*
 
+sdk.download:
+  RUN apt update
+  RUN apt install -y wget
+  ARG --required version
+  RUN wget https://github.com/joseluisq/macosx-sdks/releases/download/$version/MacOSX$version.sdk.tar.xz
+  SAVE ARTIFACT MacOSX$version.sdk.tar.xz
+
 sdk:
   ARG --required version
   ARG --required download_sdk
   FROM +deps
   IF [ $download_sdk = "true" ]
-    RUN wget https://github.com/joseluisq/macosx-sdks/releases/download/$version/MacOSX$version.sdk.tar.xz
+    COPY (+sdk.download/MacOSX$version.sdk.tar.xz --version=$version) .
   ELSE
     COPY sdks/MacOSX$version.sdk.tar.xz .
   END
