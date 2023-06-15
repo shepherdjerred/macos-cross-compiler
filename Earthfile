@@ -135,11 +135,12 @@ sdk:
   FROM +deps
   IF [ $download_sdk = "true" ]
     COPY (+sdk.download/MacOSX$version.sdk.tar.xz --version=$version) .
+    RUN tar -xf MacOSX$version.sdk.tar.xz
+    RUN mv MacOSX*.sdk MacOSX$version.sdk
   ELSE
     COPY sdks/MacOSX$version.sdk.tar.xz .
+    RUN tar -xf MacOSX$version.sdk.tar.xz
   END
-  RUN tar -xf MacOSX$version.sdk.tar.xz
-  RUN mv MacOSX*.sdk MacOSX$version.sdk
   SAVE ARTIFACT MacOSX$version.sdk/*
 
 gcc:
