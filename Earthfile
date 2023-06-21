@@ -212,6 +212,7 @@ image:
   ARG download_sdk=false
   FROM ubuntu:jammy
   COPY (+sdk/ --version=$sdk_version --download_sdk=$download_sdk) /osxcross/SDK/MacOSX$sdk_version.sdk/
+  RUN ln -s /osxcross/SDK/MacOSX$sdk_version.sdk/ /sdk
   RUN apt update
   # this is the clang we'll actually be using to compile stuff with!
   RUN apt install -y clang
@@ -236,6 +237,7 @@ image:
   ENV PATH=$PATH:/gcc/bin
   ENV PATH=$PATH:/cctools/bin
   ENV PATH=$PATH:/osxcross/bin
+  ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   WORKDIR /workspace
   SAVE IMAGE --push ghcr.io/shepherdjerred/macos-cross-compiler:latest
 
@@ -247,19 +249,13 @@ test:
   ARG download_sdk=false
   FROM +image --architectures=$architectures --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk
   COPY +samples/ samples/
-  ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   FOR architecture IN $architectures
     ENV triple=$architecture-apple-darwin$kernel_version
     RUN $triple-clang --target=$triple samples/hello.c -o hello-clang
     RUN $triple-clang++ --target=$triple samples/hello.cpp -o hello-clang++
-    RUN $triple-gcc -L/osxcross/SDK/MacOSX$sdk_version.sdk/usr/lib/ \
-      -I/osxcross/SDK/MacOSX$sdk_version.sdk/usr/include/ \
-      samples/hello.c -o hello-gcc
-    RUN $triple-g++ -L/osxcross/SDK/MacOSX$sdk_version.sdk/usr/lib/ \
-      -I/osxcross/SDK/MacOSX$sdk_version.sdk/usr/include/ \
-      samples/hello.cpp -o hello-g++
-    # RUN $triple-gfortran samples/hello.f90 -o hello-gfortran
-    # RUN $triple-rustc samples/hello.rs -o hello-rustc
+    RUN $triple-gcc samples/hello.c -o hello-gcc
+    RUN $triple-g++ samples/hello.cpp -o hello-g++
+    RUN $triple-gfortran samples/hello.f90 -o hello-gfortran
   END
 
 samples:

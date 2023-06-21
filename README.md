@@ -1,6 +1,6 @@
 # macOS Cross Compiler
 
-This project allows you to compile C/C++ code on Linux that will be executed on macOS. This project is focused on supporting newer versions of macOS and C/C++. Older versions are not well tested.
+This project allows you to compile C, C++, Fortran, and Rust code on Linux that will be executed on macOS. This project is focused on supporting newer versions of macOS and C, C++, Fortran, and Rust. Older versions are not well tested.
 
 ## Quick Start
 
@@ -11,17 +11,18 @@ Install the requirements below, then follow the instructions in the usage sectio
 * [Docker](https://docs.docker.com/engine/install/)
 * [Earthly](https://earthly.dev/get-earthly)
   * Earthly is a combination of Docker and [GNU Make](https://www.gnu.org/software/make/). It builds everything in Docker containers, which makes it easy to automatically cache and parallelize builds.
-* A copy of the macOS SDK in `/sdks`. See [the osxcross documentation about this](https://github.com/tpoechtrager/osxcross#packaging-the-sdk).
+  * Be sure to increase your cache size, otherwise you will see _terrible_ performance building this project. Run the commands below:
+    * `earthly config global.cache_size_mb 1000000`
+    * `earthly config global.cache_size_pct 70`
+* Optional: A copy of the macOS SDK in `/sdks`. See [the osxcross documentation about this](https://github.com/tpoechtrager/osxcross#packaging-the-sdk).
 
 ### Usage
 
 ```bash
 # Start a Docker container using the image we built earlier
 # Replace this with the path to the source you want to compile
-docker run -v $PWD/samples:/workspace/code \
+docker run -v $PWD/samples:/workspace \
   --rm \
-  -w /workspace/code \
-  -e MACOSX_DEPLOYMENT_TARGET=13 \
   -it \
   ghcr.io/shepherdjerred/macos-cross-compiler \
   /bin/bash
@@ -29,19 +30,11 @@ docker run -v $PWD/samples:/workspace/code \
 # Inside of the Docker container
 # Compile something using gcc
 ## for arm64
-aarch64-apple-darwin22-gcc -L/osxcross/SDK/MacOSX13.0.sdk/usr/lib/ \
-      -I/osxcross/SDK/MacOSX13.0.sdk/usr/include/ \
-      hello.c -o hello
-aarch64-apple-darwin22-g++ -L/osxcross/SDK/MacOSX13.0.sdk/usr/lib/ \
-      -I/osxcross/SDK/MacOSX13.0.sdk/usr/include/ \
-      hello.cpp -o hello
+aarch64-apple-darwin22-gcc hello.c -o hello
+aarch64-apple-darwin22-g++ hello.cpp -o hello
 ## for x86_64
-x86_64-apple-darwin22-gcc -L/osxcross/SDK/MacOSX13.0.sdk/usr/lib/ \
-      -I/osxcross/SDK/MacOSX13.0.sdk/usr/include/ \
-      hello.c -o hello
-x86_64-apple-darwin22-g++ -L/osxcross/SDK/MacOSX13.0.sdk/usr/lib/ \
-      -I/osxcross/SDK/MacOSX13.0.sdk/usr/include/ \
-      hello.cpp -o hello
+x86_64-apple-darwin22-gcc hello.c -o hello
+x86_64-apple-darwin22-g++ hello.cpp -o hello
 
 # Compile using clang
 ## for arm64
