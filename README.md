@@ -49,12 +49,6 @@ x86_64-apple-darwin22-clang --target==x86_64-apple-darwin22 hello.cpp -o hello
 aarch64-apple-darwin22-gfortran hello.f90 -o hello
 ## for x86_64
 x86_64-apple-darwin22-gfortran hello.f90 -o hello
-
-# Compile using Rust
-## for arm64
-aarch64-apple-darwin22-rustc samples/hello.rs -o hello
-## for x86_64
-x86_64-apple-darwin22-rustc samples/hello.rs -o hello
 ```
 
 ### Compiler Executables
@@ -66,8 +60,8 @@ The table below shows the name of the executable for each architecture/compiler 
 |          | x86_64                         | aarch64                         |
 |----------|--------------------------------|---------------------------------|
 | **clang**    | x86_64-apple-darwin22-clang    | aarch64-apple-darwin22-clang    |
-| **gcc**      | x86_64-apple-darwin22-gcc      | aarch64-apple-darwin22-gcc      |
 | **clang++**  | x86_64-apple-darwin22-clang++  | aarch64-apple-darwin22-clang++  |
+| **gcc**      | x86_64-apple-darwin22-gcc      | aarch64-apple-darwin22-gcc      |
 | **g++**      | x86_64-apple-darwin22-g++      | aarch64-apple-darwin22-g++      |
 | **gfortran** | x86_64-apple-darwin22-gfortran | aarch64-apple-darwin22-gfortran |
 
@@ -129,7 +123,7 @@ This project supports the following languages:
 
 * C (up to C 17)
 * C++ (up to C++ 20)
-* Fortran (up to Fortran 2018) (needs confirmation)
+* Fortran (up to Fortran 2018)
 
 This project supports the following versions of macOS:
 
