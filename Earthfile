@@ -3,7 +3,6 @@ PROJECT sjerred/macos-cross-compiler
 FROM ubuntu:jammy
 WORKDIR /workspace
 
-
 pipeline:
   PIPELINE --push
   TRIGGER push main
@@ -157,7 +156,7 @@ gcc:
   RUN apt-get install -y --force-yes llvm-dev libxml2-dev uuid-dev libssl-dev bash patch make tar xz-utils bzip2 gzip sed cpio libbz2-dev zlib1g-dev
 
   IF [ $architecture = "aarch64" ]
-    GIT CLONE --branch master-wip-apple-si https://github.com/iains/gcc-darwin-arm64 gcc
+    GIT CLONE https://github.com/iains/gcc-13-branch gcc
   ELSE IF [ $architecture = "x86_64" ]
     GIT CLONE --branch releases/gcc-12.3.0 https://github.com/gcc-mirror/gcc gcc
   ELSE
