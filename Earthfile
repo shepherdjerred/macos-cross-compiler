@@ -255,6 +255,19 @@ test:
     RUN $triple-gcc samples/hello.c -o hello-gcc
     RUN $triple-g++ samples/hello.cpp -o hello-g++
     RUN $triple-gfortran samples/hello.f90 -o hello-gfortran
+    IF [ "$architecture" = "aarch64" ]
+      RUN file hello-clang | grep -q "arm64 executable"
+      RUN file hello-clang++ | grep -q "arm64 executable"
+      RUN file hello-gcc | grep -q "arm64 executable"
+      RUN file hello-g++ | grep -q "arm64 executable"
+      RUN file hello-gfortran | grep -q "arm64 executable"
+    ELSE
+      RUN file hello-clang | grep -q "$architecture executable"
+      RUN file hello-clang++ | grep -q "$architecture executable"
+      RUN file hello-gcc | grep -q "$architecture executable"
+      RUN file hello-g++ | grep -q "$architecture executable"
+      RUN file hello-gfortran | grep -q "$architecture executable"
+    END
   END
 
 samples:
