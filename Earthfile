@@ -7,7 +7,6 @@ pipeline:
   PIPELINE --push
   TRIGGER push main
   TRIGGER pr main
-  BUILD +image --download_sdk=true
   BUILD +test --download_sdk=true
 
 deps:
