@@ -8,6 +8,9 @@
         "esbenp.prettier-vscode",
         "earthly.earthfile-syntax-highlighting"
       ]
+    },
+    "devpod": {
+      "prebuildRepository": "ghcr.io/shepherdjerred/macos-cross-compiler"
     }
   },
   "features": {
