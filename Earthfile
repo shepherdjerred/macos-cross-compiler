@@ -1,28 +1,10 @@
-VERSION 0.7
-PROJECT sjerred/macos-cross-compiler
+VERSION 0.8
 FROM ubuntu:jammy
 WORKDIR /workspace
 
-pipeline:
-  PIPELINE --push
-  TRIGGER push main
-  TRIGGER pr main
+ci:
   BUILD +test --download_sdk=true
-  BUILD +devcontainer
-
-devcontainer:
-  FROM earthly/dind:ubuntu
-  WORKDIR /workspace
-  ARG TARGETARCH
-  ARG version=0.1.11-beta.0
-  RUN curl --location --fail --silent --show-error -o /usr/local/bin/devpod https://github.com/loft-sh/devpod/releases/download/v$version/devpod-linux-$TARGETARCH
-  RUN chmod +x /usr/local/bin/devpod
-  COPY .devcontainer/devcontainer.json .
-  RUN --push --secret GITHUB_TOKEN=github_token echo $GITHUB_TOKEN | docker login ghcr.io -u shepherdjerred --password-stdin
-  WITH DOCKER
-    RUN devpod provider add docker && \
-      devpod build github.com/shepherdjerred/macos-cross-compiler --repository ghcr.io/shepherdjerred/macos-cross-compiler
-  END
+  BUILD +image --download_sdk=true
 
 deps:
   RUN apt update -y
@@ -262,6 +244,7 @@ test:
   ARG target_sdk_version=11
   ARG download_sdk=false
   FROM +image --architectures=$architectures --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk
+  RUN apt install -y file
   COPY +samples/ samples/
   FOR architecture IN $architectures
     ENV triple=$architecture-apple-darwin$kernel_version
