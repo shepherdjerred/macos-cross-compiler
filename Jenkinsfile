@@ -36,9 +36,11 @@ pipeline {
 '''
         }
     }
+
     environment {
         EARTHLY_TOKEN = credentials('EARTHLY_TOKEN')
     }
+
     stages {
         stage('Build') {
             steps {
