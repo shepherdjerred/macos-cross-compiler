@@ -22,6 +22,8 @@ pipeline {
                         value:
                       - name: TS_EXTRA_ARGS
                         value: --accept-dns=true
+                      - name: TS_USERSPACE
+                        value: false
                     - name: earthly
                       image: earthly/earthly
                       env:
