@@ -36,12 +36,16 @@ pipeline {
     }
 
     environment {
+        GITHUB_USERNAME = "shepherdjerred"
+        GITHUB_TOKEN = credentials('GITHUB_TOKEN')
         EARTHLY_TOKEN = credentials('EARTHLY_TOKEN')
     }
 
     stages {
         stage('Build') {
             steps {
+              sh 'earthly config git "{github.com: {user: $GITHUB_USERNAME, password: $GITHUB_TOKEN, auth: https}}"'
+              sh 'earthly config git "{ghcr.io: {user: $GITHUB_USERNAME, password: $GITHUB_TOKEN, auth: https}}"'
               sh 'earthly --sat=lamport --org=sjerred --ci --push +ci';
             }
         }
