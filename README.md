@@ -2,7 +2,7 @@
 
 This project allows you to compile C, C++, Fortran, and Rust code on Linux that will be executed on macOS. This project is focused on supporting newer versions of macOS and C, C++, Fortran, and Rust. Older versions are not well tested.
 
-Rust is supported through the [Zig subproject](zig/)
+Rust is supported through the [Zig subproject](zig/).
 
 ## Quick Start
 
