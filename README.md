@@ -1,8 +1,11 @@
 # macOS Cross Compiler
 
-This project allows you to cross-compile C, C++, Fortran, and Rust code on Linux that will be executed on macOS. This project is focused on supporting newer versions of macOS and C, C++, Fortran, and Rust.
+![A picture of Tux holding a red apple](./assets/256.png)
 
-Versions older than macOS 13 (Ventura) are not well tested, though they _should_ work fine.
+This project allows you to cross-compile C, C++, Fortran, and Rust code on Linux that will be executed on macOS.
+
+> [!NOTE]
+> This project is focused on supporting newer versions of macOS and C, C++, Fortran, and Rust. Versions older than macOS 13 (Ventura) are not well tested, though they _should_ work fine.
 
 ## Quick Start
 
