@@ -3,7 +3,7 @@ pipeline {
         kubernetes {
             defaultContainer 'earthly'
             inheritFrom 'default'
-            yaml '''
+            yaml """
             spec:
                 containers:
                     - name: tailscale
@@ -20,7 +20,7 @@ pipeline {
                         value: 1
                       command: ["sleep"]
                       args: ["1h"]
-'''
+"""
         }
     }
     environment {
