@@ -29,6 +29,8 @@ pipeline {
                       env:
                       - name: NO_BUILDKIT
                         value: 1
+                      - name: NO_COLOR
+                        value: 1
                       command: ["sleep"]
                       args: ["1h"]
 '''
