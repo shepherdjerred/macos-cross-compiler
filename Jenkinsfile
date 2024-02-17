@@ -5,8 +5,11 @@ pipeline {
             yaml '''
             spec:
                 containers:
-                - name: earthly
-                  image: earthly/earthly
+                    - name: earthly
+                      image: earthly/earthly
+                      env:
+                      - name: NO_BUILDKIT
+                        value: 1
 '''
         }
     }
