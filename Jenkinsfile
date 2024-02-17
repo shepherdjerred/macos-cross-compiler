@@ -10,7 +10,8 @@ pipeline {
                       env:
                       - name: NO_BUILDKIT
                         value: 1
-                      command: ["/bin/sh"]
+                      command: ["sleep"]
+                      args: ["1h"]
 '''
         }
     }
