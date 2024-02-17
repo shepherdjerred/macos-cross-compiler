@@ -1,12 +1,14 @@
 # macOS Cross Compiler
 
-This project allows you to compile C, C++, Fortran, and Rust code on Linux that will be executed on macOS. This project is focused on supporting newer versions of macOS and C, C++, Fortran, and Rust. Older versions are not well tested.
+This project allows you to cross-compile C, C++, Fortran, and Rust code on Linux that will be executed on macOS. This project is focused on supporting newer versions of macOS and C, C++, Fortran, and Rust.
+
+Versions older than macOS 13 (Ventura) are not well tested, though they _should_ work fine.
 
 ## Quick Start
 
 Install the requirements below, then follow the instructions in the usage section.
 
-### Requirements
+### Host Requirements
 
 * Docker
 
@@ -70,17 +72,40 @@ zig c++ \
     -o hello hello.cpp
 
 # Rust targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
-# Note: Rust requires a little more configuration. Take note of the `/samples/rust` directory.
-# You'll need a `Cargo.toml` and `.cargo/config.toml` properly configured.
 export CC=zig-cc-aarch64-macos
 cargo build --target aarch64-apple-darwin
 ```
 
-### Compiler Executables
+### Rust
+
+Support for Rust requires a bit of project configuration.
+
+```toml
+# .cargo/config.toml
+[build]
+[target.aarch64-apple-darwin]
+linker = "zig-cc-aarch64-macos"
+
+[target.x86_64-apple-darwin]
+linker = "zig-cc-x86_64-macos"
+```
+
+Once configured, you can run `cargo` after setting the `CC` variable:
+
+```bash
+export CC="zig-cc-x86_64-macos"
+cargo build --target x86_64-apple-darwin
+
+export CC="zig-cc-aarch64-macos"
+cargo build --target aarch64-apple-darwin
+```
+
+### C, C++ and Fortran Compiler Executables
 
 The table below shows the name of the executable for each architecture/compiler pair.
 
-**Note:** By default the target kernel version is `darwin22`. You'll need to change `darwin22` if you choose to compile for another kernel version.
+> [!NOTE]
+> By default the target kernel version is `darwin22`. You'll need to change `darwin22` if you choose to compile for another kernel version.
 
 |          | x86_64                         | aarch64                         |
 |----------|--------------------------------|---------------------------------|
@@ -98,7 +123,7 @@ This project compiles [cctools](https://github.com/tpoechtrager/cctools-port), w
 
 You probably don't need to run these programs directly, but if you do they are located at `/cctools/bin`, and they are also on the `PATH`.
 
-Tool list:
+Complete tool list:
 
 * ObjectDump
 * ar
@@ -133,7 +158,11 @@ Tool list:
 * unwinddump
 * vtool
 
-## Compatibility
+## Code Signing, Notarizing, and Universal Binaries
+
+[Code signing](https://developer.apple.com/documentation/security/code_signing_services) (but _not_ [notarizing](https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/)) should be possible with this project, but it is untested. Building [universal binaries](https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary) should also be possible, but again, this is not tested.
+
+## Target Compatibility
 
 This project can build for macOS on both x86_64 and aarch64 archtictures, regardless of the host architecture.
 
@@ -142,13 +171,15 @@ This project can build for macOS on both x86_64 and aarch64 archtictures, regard
 | **macOS x86_64** | ✅            | ✅           |
 | **macOS aarch64**  | ✅            | ✅           |
 
-**Note:** aarch64 is Apple's internal name for arm64. They're used interchangably, but aarch64 is more correct when referring to macOS on arm64.
+> [!NOTE]
+> aarch64 is Apple's internal name for arm64. They're used interchangably, but aarch64 is more correct when referring to macOS on arm64.
 
 This project supports the following languages:
 
 * C (up to C 17)
 * C++ (up to C++ 20)
 * Fortran (up to Fortran 2018)
+* Rust (any version)
 
 This project supports the following versions of macOS:
 
@@ -156,7 +187,10 @@ This project supports the following versions of macOS:
 * ✅ macOS 12 Monterey
 * ✅ macOS 13 Ventura
 
-**Note:** This project is tested on modern verisons of macOS, Clang, and GCC. It has not been tested with older versions of these softwares. If you need compatabiltiy with older versions, check out the [osxcross project](https://github.com/tpoechtrager/osxcross).
+Support for macOS 14 Sonoma has not been extensively tested. macOS 14-specific features can be added by updating the SDK version. The Docker image uses the 13.0 SDK by default.
+
+> [!IMPORTANT]
+> This project is tested on modern verisons of macOS, Clang, and GCC. It has not been tested with older versions of these softwares. If you need compatabiltiy with older versions, check out the [osxcross project](https://github.com/tpoechtrager/osxcross).
 
 ## Technical Details
 
@@ -182,6 +216,8 @@ The Zig and Rust portion were informed by these resources:
 
 ## Development
 
+The Docker images for this repository are built with [Earthly](https://earthly.dev).
+
 ```bash
 # Create a Docker image tagged as `shepherdjerred/macos-cross-compiler`
 # The first run will take ~20 minutes on an M1 MacBook.
@@ -190,6 +226,9 @@ earthly +image
 
 # Verify that the compilers work correctly
 earthly +test
+
+# If you're on macOS, try actually running the binaries
+earthly +validate
 ```
 
 ## Inspiration
