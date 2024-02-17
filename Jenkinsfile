@@ -24,7 +24,7 @@ pipeline {
         }
     }
     environment {
-        EARTHLY_TOKEN =
+        EARTHLY_TOKEN = $credentials('EARTHLY_TOKEN')
     }
     stages {
         stage('Install Earthly') {
