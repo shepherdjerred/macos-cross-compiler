@@ -14,8 +14,8 @@ pipeline {
                       - name: TS_AUTHKEY
                         valueFrom:
                           secretKeyRef:
-                          name: tailscale-auth-key
-                          key: TS_AUTHKEY
+                            name: tailscale-auth-key
+                            key: TS_AUTHKEY
                       - name: TS_ACCEPT_DNS
                         value: true
                       - name: TS_KUBE_SECRET
