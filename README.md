@@ -42,8 +42,7 @@ $ docker run \
   -v $PWD/samples:/workspace \
   --rm \
   -it \
-  ghcr.io/shepherdjerred/macos-cross-compiler \
-  /bin/bash
+  ghcr.io/shepherdjerred/macos-cross-compiler:latest
 
 # Now that you're inside of the Docker container, you can run the compilers.
 
