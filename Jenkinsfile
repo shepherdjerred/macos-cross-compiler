@@ -45,8 +45,6 @@ pipeline {
         stage('Build') {
             steps {
               sh 'echo $GITHUB_TOKEN | docker login ghcr.io -u GITHUB_USERNAME --password-stdin'
-              sh 'earthly config git "{github.com: {user: $GITHUB_USERNAME, password: $GITHUB_TOKEN, auth: https}}"'
-              sh 'earthly config git "{ghcr.io: {user: $GITHUB_USERNAME, password: $GITHUB_TOKEN, auth: https}}"'
               sh 'earthly --sat=lamport --org=sjerred --ci --push +ci';
             }
         }
