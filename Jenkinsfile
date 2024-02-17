@@ -3,7 +3,7 @@ pipeline {
         kubernetes {
             defaultContainer 'earthly'
             inheritFrom 'default'
-            yaml """
+            yaml '''
             spec:
                 containers:
                     - name: tailscale
@@ -27,14 +27,14 @@ pipeline {
                         value: 1
                       command: ["sleep"]
                       args: ["1h"]
-"""
+'''
         }
     }
     environment {
         EARTHLY_TOKEN = $credentials('EARTHLY_TOKEN')
     }
     stages {
-        stage('Install Earthly') {
+        stage('Build') {
             steps {
                 sh 'earthly --sat=lamport --org=sjerred --ci --push +ci'
             }
