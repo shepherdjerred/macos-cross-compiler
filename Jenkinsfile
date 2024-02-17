@@ -59,7 +59,13 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh 'earthly --sat=lamport --org=sjerred --ci --push +ci'
+                setBuildStatus("Compiling", "compile", "pending");
+                try {
+                   sh 'earthly --sat=lamport --org=sjerred --ci --push +ci'
+                } catch (err) {
+                    setBuildStatus("Failed", "pl-compile", "failure");
+                }
+                setBuildStatus("Build complete", "compile", "success");
             }
         }
     }
