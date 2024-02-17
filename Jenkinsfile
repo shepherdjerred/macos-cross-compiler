@@ -1,13 +1,18 @@
 pipeline {
-    agent any
+    agent kubernetes {
+      inheritFrom 'default'
+      yaml '''
+      spec:
+        containers:
+        - name: earthly
+          image: earthly/earthly
+'''
+    }
     stages {
         stage('Install Earthly') {
+            container()
             steps {
-                sh "sudo apt update"
-                sh "sudo apt install -y wget"
-                sh "sudo wget https://github.com/earthly/earthly/releases/download/v0.8.3/earthly-linux-amd64 -O /usr/local/bin/earthly"
-                sh "sudo chmod +x /usr/local/bin/earthly"
-                sh "/usr/local/bin/earthly bootstrap"
+                sh 'earthly'
             }
         }
     }
