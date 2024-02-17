@@ -12,7 +12,6 @@ pipeline {
     }
     stages {
         stage('Install Earthly') {
-            container()
             steps {
                 sh 'earthly'
             }
