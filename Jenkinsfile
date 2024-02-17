@@ -13,6 +13,10 @@ pipeline {
                       env:
                       - name: TS_AUTHKEY
                         value: "${credentials('TAILSCALE_AUTH_KEY')}"
+                      - name: TS_ACCEPT_DNS
+                        value: true
+                      - name: TS_KUBE_SECRET
+                        value: ""
                     - name: earthly
                       image: earthly/earthly
                       env:
