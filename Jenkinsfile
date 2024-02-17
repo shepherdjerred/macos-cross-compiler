@@ -1,9 +1,13 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'earthly/earthly'
+        }
+    }
     stages {
-        stage('Hello World') {
+        stage('Build') {
             steps {
-                sh 'echo Hello World'
+                sh "earthly --ci --push +ci"
             }
         }
     }
