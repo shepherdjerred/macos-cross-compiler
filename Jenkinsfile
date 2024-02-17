@@ -20,6 +20,8 @@ pipeline {
                         value: true
                       - name: TS_KUBE_SECRET
                         value:
+                      - name: TS_EXTRA_ARGS
+                        value: --accept-dns=true
                     - name: earthly
                       image: earthly/earthly
                       env:
