@@ -11,7 +11,7 @@ pipeline {
                       securityContext:
                           privileged: true
                       env:
-                      - name: TAILSCALE_AUTH_KEY
+                      - name: TS_AUTHKEY
                         value: "${credentials('TAILSCALE_AUTH_KEY')}"
                     - name: earthly
                       image: earthly/earthly
