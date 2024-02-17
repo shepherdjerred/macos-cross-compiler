@@ -10,7 +10,7 @@ pipeline {
                       env:
                       - name: NO_BUILDKIT
                         value: 1
-                      entrypoint: ["/bin/sh"]
+                      command: ["/bin/sh"]
 '''
         }
     }
