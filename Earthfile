@@ -3,7 +3,8 @@ FROM ubuntu:jammy
 WORKDIR /workspace
 
 ci:
-  BUILD +image
+  # TODO: build for arm64 too
+  BUILD  --platform=linux/amd64 +image
   BUILD +test
 
 deps:
@@ -246,8 +247,6 @@ image:
   ENV PATH=$PATH:/osxcross/bin
   ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   WORKDIR /workspace
-  ENTRYPOINT /bin/bash
-  CMD []
   SAVE IMAGE --push ghcr.io/shepherdjerred/macos-cross-compiler:latest
 
 test:

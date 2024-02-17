@@ -19,7 +19,10 @@ The cross-compilers are available as a Docker image. This is easiest way to dist
 The Docker image is hosted available at [ghcr.io/shepherdjerred/macos-cross-compiler:latest](https://github.com/shepherdjerred/macos-cross-compiler/pkgs/container/macos-cross-compiler).
 
 ```bash
-$ docker run ghcr.io/shepherdjerred/macos-cross-compiler:latest
+# Run the container
+# Note: You'll probably want to bind-mount some files to compile.
+# The `samples` directory has some Hello World programs.
+$ docker run ghcr.io/shepherdjerred/macos-cross-compiler:latest /bin/bash
 ```
 
 ## Quick Start
@@ -42,7 +45,8 @@ $ docker run \
   -v $PWD/samples:/workspace \
   --rm \
   -it \
-  ghcr.io/shepherdjerred/macos-cross-compiler:latest
+  ghcr.io/shepherdjerred/macos-cross-compiler:latest \
+  /bin/bash
 
 # Now that you're inside of the Docker container, you can run the compilers.
 
