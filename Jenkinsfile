@@ -12,7 +12,7 @@ pipeline {
                           privileged: true
                       env:
                       - name: TAILSCALE_AUTH_KEY
-                        value: $credentials('TAILSCALE_AUTH_KEY')
+                        value: "${credentials('TAILSCALE_AUTH_KEY')}"
                     - name: earthly
                       image: earthly/earthly
                       env:
