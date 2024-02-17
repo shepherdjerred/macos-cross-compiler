@@ -1,11 +1,39 @@
-void setBuildStatus(String message, String state) {
+
+def getRepoURL() {
+  sh "mkdir -p .git"
+  sh "git config --get remote.origin.url > .git/remote-url"
+  return readFile(".git/remote-url").trim()
+}
+def getCommitSha() {
+  sh "mkdir -p .git"
+  sh "git rev-parse HEAD > .git/current-commit"
+  return readFile(".git/current-commit").trim()
+}
+
+def updateGithubCommitStatus(build, String context, String buildUrl, String message, String state) {
+  // workaround https://issues.jenkins-ci.org/browse/JENKINS-38674
+  repoUrl = getRepoURL()
+  commitSha = getCommitSha()
+  println "Updating Github Commit Status"
+  println "repoUrl $repoUrl"
+  println "commitSha $commitSha"
+  println "build result: ${build.result}, currentResult: ${build.currentResult}"
+
   step([
-      $class: "GitHubCommitStatusSetter",
-      reposSource: [$class: "ManuallyEnteredRepositorySource", url: "https://github.com/shepherdjerred/macos-cross-compiler"],
-      contextSource: [$class: "ManuallyEnteredCommitContextSource", context: "ci/jenkins/build-status"],
-      errorHandlers: [[$class: "ChangingBuildStatusErrorHandler", result: "UNSTABLE"]],
-      statusResultSource: [ $class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state]] ]
-  ]);
+    $class: 'GitHubCommitStatusSetter',
+    reposSource: [$class: "ManuallyEnteredRepositorySource", url: repoUrl],
+    commitShaSource: [$class: "ManuallyEnteredShaSource", sha: commitSha],
+    errorHandlers: [[$class: 'ShallowAnyErrorHandler']],
+    contextSource: [$class: "ManuallyEnteredCommitContextSource", context: context],
+    statusBackrefSource: [$class: "ManuallyEnteredBackrefSource", backref: buildUrl],
+
+    statusResultSource: [
+      $class: 'ConditionalStatusResultSource',
+      results: [
+        [$class: 'AnyBuildResult', state: state, message: message]
+      ]
+    ]
+  ])
 }
 
 pipeline {
@@ -52,15 +80,21 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-              try {
-                setBuildStatus("Pending", "PENDING");
-                sh 'earthly --sat=lamport --org=sjerred --ci --push +ci';
-              } catch (err) {
-                setBuildStatus("Build failed", "FAILURE");
-                throw err;
-              }
-              setBuildStatus("Build complete", "SUCCESS");
+              updateGithubCommitStatus(currentBuild, "continuous-integration/jenkins", BUILD_URL, "Build Pending", 'PENDING')
+              sh 'earthly --sat=lamport --org=sjerred --ci --push +ci';
             }
         }
     }
+
+    post {
+        failure {
+            updateGithubCommitStatus(currentBuild, "continuous-integration/jenkins", BUILD_URL, "Build Failed", 'FAILURE')
+        }
+        success {
+            updateGithubCommitStatus(currentBuild, "continuous-integration/jenkins", BUILD_URL, "Build Success", 'SUCCESS')
+        }
+        unstable {
+            updateGithubCommitStatus(currentBuild, "continuous-integration/jenkins", BUILD_URL, "Build Unstable", 'UNSTABLE')
+        }
+      }
 }
