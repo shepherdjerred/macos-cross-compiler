@@ -6,7 +6,7 @@ pipeline {
             spec:
                 containers:
                 - name: earthly
-                image: earthly/earthly
+                  image: earthly/earthly
 '''
         }
     }
