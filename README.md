@@ -61,9 +61,8 @@ aarch64-apple-darwin22-gfortran hello.f90 -o hello
 ## for darwin x86_64
 x86_64-apple-darwin22-gfortran hello.f90 -o hello
 
-# Using Zig
-
-# C targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
+# Compile using Zig
+## C targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
 zig cc \
     -target aarch64-macos \
     --sysroot=/sdk \
@@ -73,7 +72,7 @@ zig cc \
     -framework CoreFoundation \
     -o hello hello.c
 
-# C++ targeting darwin arm64(change aarch64 -> x86_64 to target amd64)
+## C++ targeting darwin arm64(change aarch64 -> x86_64 to target amd64)
 zig c++ \
     -target aarch64-macos \
     --sysroot=/sdk -I/sdk/usr/include \
@@ -84,7 +83,7 @@ zig c++ \
     -framework CoreFoundation \
     -o hello hello.cpp
 
-# Rust targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
+## Rust targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
 export CC=zig-cc-aarch64-macos
 cd rust && cargo build --target aarch64-apple-darwin
 ```
