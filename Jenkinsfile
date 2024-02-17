@@ -11,16 +11,10 @@ pipeline {
                       securityContext:
                           privileged: true
                       env:
-
-                    - name: TS_AUTHKEY
-                      valueFrom:
-                        secretKeyRef:
-                        name: tailscale-auth-key
-                        key: password
                       - name: TS_ACCEPT_DNS
                         value: true
                       - name: TS_KUBE_SECRET
-                        value: ""
+                        value: tailscale-auth-key
                     - name: earthly
                       image: earthly/earthly
                       env:
