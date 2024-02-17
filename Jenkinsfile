@@ -10,7 +10,6 @@ pipeline {
                       image: tailscale/tailscale
                       securityContext:
                           privileged: true
-                      command: ["tailscale", "up", "--accept-dns=true"]
                       env:
                       - name: TS_AUTHKEY
                         valueFrom:
