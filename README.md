@@ -14,6 +14,9 @@ Install the requirements below, then follow the instructions in the usage sectio
 
 ### Usage
 
+> [!IMPORTANT]
+> The Docker image is quite large. It includes several compilers and the macOS SDK.
+
 ```bash
 # Start a Docker container using the Docker image.
 # Replace `$PWD/samples` with the path to the source you want to compile.
@@ -73,7 +76,7 @@ zig c++ \
 
 # Rust targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
 export CC=zig-cc-aarch64-macos
-cargo build --target aarch64-apple-darwin
+cd rust && cargo build --target aarch64-apple-darwin
 ```
 
 ### Rust
