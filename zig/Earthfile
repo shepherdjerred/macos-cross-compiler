@@ -1,94 +1,19 @@
-VERSION 0.7
-
-ubuntu:
-  FROM ubuntu:jammy
-  RUN apt update
-  WORKDIR /workspace
+VERSION 0.8
 
 zig:
-  FROM +ubuntu
+  ARG TARGETARCH
+  FROM ubuntu:jammy
+  RUN apt update
   RUN apt install -y wget xz-utils
-  RUN wget -O zig.tar.xz https://ziglang.org/download/0.10.1/zig-linux-aarch64-0.10.1.tar.xz
+  IF [ $TARGETARCH = "aarch64" ] || [ $TARGETARCH = "arm64" ]
+    RUN wget -O zig.tar.xz https://ziglang.org/download/0.10.1/zig-linux-aarch64-0.10.1.tar.xz
+  ELSE IF [ $TARGETARCH = "x86_64" ] || [ $TARGETARCH = "amd64" ]
+    RUN wget -O zig.tar.xz https://ziglang.org/download/0.10.1/zig-linux-x86_64-0.10.1.tar.xz
+  ELSE
+    RUN echo "Unsupported architecture: $TARGETARCH"
+    RUN exit 1
+  END
   RUN tar -xf zig.tar.xz
   RUN rm zig.tar.xz
   RUN mv zig* zig
   SAVE ARTIFACT zig
-
-image:
-  ARG --required sdk_version
-  ARG --required architecture
-  FROM +ubuntu
-  COPY (../+sdk/ --version=$sdk_version) /sdk
-  COPY +zig/zig /usr/local/bin
-  COPY zig-cc-$architecture-macos /usr/local/bin/
-  SAVE IMAGE macos-cross-compiler:zig
-
-image.rust:
-  ARG --required sdk_version
-  ARG --required architecture
-  FROM +image --sdk_version=$sdk_version --architecture=$architecture
-  RUN apt install -y curl
-  RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-  ENV PATH=$PATH:/root/.cargo/bin
-  SAVE IMAGE macos-cross-compiler:zig-rust
-
-test.c:
-  ARG --required sdk_version
-  ARG --required architecture
-  FROM +image --sdk_version=$sdk_version --architecture=$architecture
-  COPY ../+samples/hello.c hello.c
-  RUN zig cc \
-    -target $architecture-macos \
-    --sysroot=/sdk \
-    -I/sdk/usr/include \
-    -L/sdk/usr/lib \
-    -F/sdk/System/Library/Frameworks \
-    -framework CoreFoundation \
-    -o hello hello.c
-  SAVE ARTIFACT hello AS LOCAL out/$architecture/c/
-
-test.cpp:
-  ARG --required sdk_version
-  ARG --required architecture
-  FROM +image --sdk_version=$sdk_version --architecture=$architecture
-  COPY ../+samples/hello.cpp hello.cpp
-  RUN zig c++ \
-    -target $architecture-macos \
-    --sysroot=/sdk -I/sdk/usr/include \
-    -I/sdk/usr/include/c++/v1/ \
-    -L/sdk/usr/lib \
-    -lc++ \
-    -F/sdk/System/Library/Frameworks \
-    -framework CoreFoundation \
-    -o hello hello.cpp
-  SAVE ARTIFACT hello AS LOCAL out/$architecture/cpp/
-
-test.rust:
-  ARG --required sdk_version
-  ARG --required architecture
-  FROM +image.rust --sdk_version=$sdk_version --architecture=$architecture
-  RUN rustup target add $architecture-apple-darwin
-  COPY ../+samples/rust .
-  ENV CC="zig-cc-$architecture-macos"
-  RUN cargo build --target $architecture-apple-darwin
-  SAVE ARTIFACT target/$architecture-apple-darwin/debug/hello AS LOCAL out/$architecture/rust/
-
-test:
-  ARG sdk_version=13.0
-  ARG architectures=aarch64 x86_64
-  FROM +ubuntu
-  FOR architecture IN $architectures
-    BUILD +test.c --sdk_version=$sdk_version --architecture=$architecture
-    BUILD +test.cpp --sdk_version=$sdk_version --architecture=$architecture
-    BUILD +test.rust --sdk_version=$sdk_version --architecture=$architecture
-  END
-
-validate:
-  ARG architecture=aarch64
-  LOCALLY
-  WAIT
-    BUILD +test --architectures=$architecture
-  END
-  RUN ./out/aarch64/c/hello
-  RUN ./out/aarch64/cpp/hello
-  RUN ./out/aarch64/rust/hello

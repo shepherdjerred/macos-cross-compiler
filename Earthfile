@@ -3,8 +3,8 @@ FROM ubuntu:jammy
 WORKDIR /workspace
 
 ci:
-  BUILD +test --download_sdk=true
-  BUILD +image --download_sdk=true
+  BUILD +image
+  BUILD +test
 
 deps:
   RUN apt update -y
@@ -205,15 +205,23 @@ image:
   ARG sdk_version=13.0
   ARG kernel_version=22
   ARG target_sdk_version=11
-  ARG download_sdk=false
-  FROM ubuntu:jammy
+  ARG download_sdk=true
   COPY (+sdk/ --version=$sdk_version --download_sdk=$download_sdk) /osxcross/SDK/MacOSX$sdk_version.sdk/
   RUN ln -s /osxcross/SDK/MacOSX$sdk_version.sdk/ /sdk
   RUN apt update
   # this is the clang we'll actually be using to compile stuff with!
   RUN apt install -y clang
+  # for inspecting the binaries
+  RUN apt install -y file
   # for gcc
   RUN apt install -y libmpc-dev libmpfr-dev
+
+  # for rust
+  COPY ./zig+zig/zig /usr/local/bin
+  RUN apt install -y curl
+  RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  ENV PATH=$PATH:/root/.cargo/bin
+
   FOR architecture IN $architectures
     ENV triple=$architecture-apple-darwin$kernel_version
     COPY (+cctools/ --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version) /cctools
@@ -224,12 +232,15 @@ image:
     COPY (+gcc/include --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk) /usr/local/include
     COPY (+gcc/$triple/lib --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk) /usr/local/lib
     COPY (+gcc/$triple/include --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk) /usr/local/include
+    COPY ./zig/zig-cc-$architecture-macos /usr/local/bin/
+    RUN rustup target add $architecture-apple-darwin
   END
 
   COPY (+xar/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
   COPY (+libtapi/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
   RUN ldconfig
 
+  ENV PATH=$PATH:/usr/local/bin
   ENV PATH=$PATH:/gcc/bin
   ENV PATH=$PATH:/cctools/bin
   ENV PATH=$PATH:/osxcross/bin
@@ -242,33 +253,88 @@ test:
   ARG sdk_version=13.0
   ARG kernel_version=22
   ARG target_sdk_version=11
-  ARG download_sdk=false
+  ARG download_sdk=true
   FROM +image --architectures=$architectures --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk
-  RUN apt install -y file
-  COPY +samples/ samples/
+  COPY ./samples/ samples/
   FOR architecture IN $architectures
     ENV triple=$architecture-apple-darwin$kernel_version
-    RUN $triple-clang --target=$triple samples/hello.c -o hello-clang
-    RUN $triple-clang++ --target=$triple samples/hello.cpp -o hello-clang++
-    RUN $triple-gcc samples/hello.c -o hello-gcc
-    RUN $triple-g++ samples/hello.cpp -o hello-g++
-    RUN $triple-gfortran samples/hello.f90 -o hello-gfortran
+
+    RUN mkdir -p out/
+
+    # compile the samples
+    RUN $triple-clang --target=$triple samples/hello.c -o out/hello-clang
+    RUN $triple-clang++ --target=$triple samples/hello.cpp -o out/hello-clang++
+    RUN $triple-gcc samples/hello.c -o out/hello-gcc
+    RUN $triple-g++ samples/hello.cpp -o out/hello-g++
+    RUN $triple-gfortran samples/hello.f90 -o out/hello-gfortran
+    RUN zig cc \
+      -target $architecture-macos \
+      --sysroot=/sdk \
+      -I/sdk/usr/include \
+      -L/sdk/usr/lib \
+      -F/sdk/System/Library/Frameworks \
+      -framework CoreFoundation \
+      -o out/hello-zig-c samples/hello.c
+    RUN zig c++ \
+      -target $architecture-macos \
+      --sysroot=/sdk -I/sdk/usr/include \
+      -I/sdk/usr/include/c++/v1/ \
+      -L/sdk/usr/lib \
+      -lc++ \
+      -F/sdk/System/Library/Frameworks \
+      -framework CoreFoundation \
+      -o out/hello-zig-c++ samples/hello.cpp
+    ENV CC="zig-cc-$architecture-macos"
+    RUN cd samples/rust && cargo build --target $architecture-apple-darwin && mv target/$architecture-apple-darwin/debug/hello ../../out/hello-rust
+
+    # verify that the cross-compiler targeted the correct architecture
     IF [ "$architecture" = "aarch64" ]
-      RUN file hello-clang | grep -q "arm64 executable"
-      RUN file hello-clang++ | grep -q "arm64 executable"
-      RUN file hello-gcc | grep -q "arm64 executable"
-      RUN file hello-g++ | grep -q "arm64 executable"
-      RUN file hello-gfortran | grep -q "arm64 executable"
+      RUN file out/hello-clang | grep -q "Mach-O 64-bit arm64 executable"
+      RUN file out/hello-clang++ | grep -q "Mach-O 64-bit arm64 executable"
+      RUN file out/hello-gcc | grep -q "Mach-O 64-bit arm64 executable"
+      RUN file out/hello-g++ | grep -q "Mach-O 64-bit arm64 executable"
+      RUN file out/hello-gfortran | grep -q "Mach-O 64-bit arm64 executable"
+      RUN file out/hello-zig-c | grep -q "Mach-O 64-bit arm64 executable"
+      RUN file out/hello-zig-c++ | grep -q "Mach-O 64-bit arm64 executable"
+      RUN file out/hello-rust | grep -q "Mach-O 64-bit arm64 executable"
     ELSE
-      RUN file hello-clang | grep -q "$architecture executable"
-      RUN file hello-clang++ | grep -q "$architecture executable"
-      RUN file hello-gcc | grep -q "$architecture executable"
-      RUN file hello-g++ | grep -q "$architecture executable"
-      RUN file hello-gfortran | grep -q "$architecture executable"
+      RUN file out/hello-clang | grep -q "Mach-O 64-bit $architecture executable"
+      RUN file out/hello-clang++ | grep -q "Mach-O 64-bit $architecture executable"
+      RUN file out/hello-gcc | grep -q "Mach-O 64-bit $architecture executable"
+      RUN file out/hello-g++ | grep -q "Mach-O 64-bit $architecture executable"
+      RUN file out/hello-gfortran | grep -q "Mach-O 64-bit $architecture executable"
+      RUN file out/hello-zig-c | grep -q "Mach-O 64-bit $architecture executable"
+      RUN file out/hello-zig-c++ | grep -q "Mach-O 64-bit $architecture executable"
+      RUN file out/hello-rust | grep -q "Mach-O 64-bit $architecture executable"
     END
+
+    SAVE ARTIFACT out/* AS LOCAL out/$architecture/
   END
 
-samples:
-  FROM ubuntu:jammy
-  COPY samples/ samples
-  SAVE ARTIFACT samples/*
+# Can only be run on macOS
+validate:
+  LOCALLY
+
+  ARG USERARCH
+  LET arch = $USERARCH
+  # convert arm64 -> aarch64
+  IF [ $arch = "arm64" ]
+    SET arch=aarch64
+  END
+  # convert x86_64 -> amd64
+  IF [ $arch = "x86_64" ]
+    SET arch=amd64
+  END
+
+  WAIT
+    BUILD +test --architectures=$arch --download_sdk=true
+  END
+
+  RUN ./out/$arch/hello-clang
+  RUN ./out/$arch/hello-clang++
+  RUN ./out/$arch/hello-g++
+  RUN ./out/$arch/hello-gcc
+  # RUN ./out/$arch/hello-gfortran
+  RUN ./out/$arch/hello-zig-c
+  RUN ./out/$arch/hello-zig-c++
+  RUN ./out/$arch/hello-rust

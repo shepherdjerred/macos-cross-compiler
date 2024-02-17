@@ -2,55 +2,78 @@
 
 This project allows you to compile C, C++, Fortran, and Rust code on Linux that will be executed on macOS. This project is focused on supporting newer versions of macOS and C, C++, Fortran, and Rust. Older versions are not well tested.
 
-Rust is supported through the [Zig subproject](zig/).
-
 ## Quick Start
 
 Install the requirements below, then follow the instructions in the usage section.
 
 ### Requirements
 
-* [Docker](https://docs.docker.com/engine/install/)
-* [Earthly](https://earthly.dev/get-earthly)
-  * Earthly is a combination of Docker and [GNU Make](https://www.gnu.org/software/make/). It builds everything in Docker containers, which makes it easy to automatically cache and parallelize builds.
-  * Be sure to increase your cache size, otherwise you will see _terrible_ performance building this project. Run the commands below:
-    * `earthly config global.cache_size_mb 1000000`
-    * `earthly config global.cache_size_pct 70`
-* Optional: A copy of the macOS SDK in `/sdks`. See [the osxcross documentation about this](https://github.com/tpoechtrager/osxcross#packaging-the-sdk).
+* Docker
 
 ### Usage
 
 ```bash
-# Start a Docker container using the image we built earlier
-# Replace this with the path to the source you want to compile
-docker run -v $PWD/samples:/workspace \
+# Start a Docker container using the Docker image.
+# Replace `$PWD/samples` with the path to the source you want to compile.
+docker run \
+  -v $PWD/samples:/workspace \
   --rm \
   -it \
   ghcr.io/shepherdjerred/macos-cross-compiler \
   /bin/bash
 
-# Inside of the Docker container
-# Compile something using gcc
-## for arm64
+# Now that you're inside of the Docker container, you can run the compilers.
+
+# Compile using gcc
+## targeting darwin arm64
 aarch64-apple-darwin22-gcc hello.c -o hello
 aarch64-apple-darwin22-g++ hello.cpp -o hello
-## for x86_64
+## targeting darwin x86_64
 x86_64-apple-darwin22-gcc hello.c -o hello
 x86_64-apple-darwin22-g++ hello.cpp -o hello
 
 # Compile using clang
-## for arm64
+## for darwin arm64
 aarch64-apple-darwin22-clang --target=aarch64-apple-darwin22 hello.c -o hello
 aarch64-apple-darwin22-clang --target=aarch64-apple-darwin22 hello.cpp -o hello
-## for x86_64
+## for darwin x86_64
 x86_64-apple-darwin22-clang --target==x86_64-apple-darwin22 hello.c -o hello
 x86_64-apple-darwin22-clang --target==x86_64-apple-darwin22 hello.cpp -o hello
 
 # Compile using gfortran
-## for arm64
+## for darwin arm64
 aarch64-apple-darwin22-gfortran hello.f90 -o hello
-## for x86_64
+## for darwin x86_64
 x86_64-apple-darwin22-gfortran hello.f90 -o hello
+
+# Using Zig
+
+# C targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
+zig cc \
+    -target aarch64-macos \
+    --sysroot=/sdk \
+    -I/sdk/usr/include \
+    -L/sdk/usr/lib \
+    -F/sdk/System/Library/Frameworks \
+    -framework CoreFoundation \
+    -o hello hello.c
+
+# C++ targeting darwin arm64(change aarch64 -> x86_64 to target amd64)
+zig c++ \
+    -target aarch64-macos \
+    --sysroot=/sdk -I/sdk/usr/include \
+    -I/sdk/usr/include/c++/v1/ \
+    -L/sdk/usr/lib \
+    -lc++ \
+    -F/sdk/System/Library/Frameworks \
+    -framework CoreFoundation \
+    -o hello hello.cpp
+
+# Rust targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
+# Note: Rust requires a little more configuration. Take note of the `/samples/rust` directory.
+# You'll need a `Cargo.toml` and `.cargo/config.toml` properly configured.
+export CC=zig-cc-aarch64-macos
+cargo build --target aarch64-apple-darwin
 ```
 
 ### Compiler Executables
@@ -151,6 +174,11 @@ These resources were helpful when working on this project:
 * <https://gist.github.com/loderunner/b6846dd82967ac048439>
 * <http://clarkkromenaker.com/post/library-dynamic-loading-mac/>
 * <https://github.com/qyang-nj/llios>
+
+The Zig and Rust portion were informed by these resources:
+
+* <https://andrewkelley.me/post/zig-cc-powerful-drop-in-replacement-gcc-clang.html>
+* <https://actually.fyi/posts/zig-makes-rust-cross-compilation-just-work/>
 
 ## Development
 
