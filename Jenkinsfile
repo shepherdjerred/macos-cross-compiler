@@ -11,8 +11,12 @@ pipeline {
                       securityContext:
                           privileged: true
                       env:
-                      - name: TS_AUTHKEY
-                        value: "${credentials('TAILSCALE_AUTH_KEY')}"
+
+                    - name: TS_AUTHKEY
+                      valueFrom:
+                        secretKeyRef:
+                        name: tailscale-auth-key
+                        key: password
                       - name: TS_ACCEPT_DNS
                         value: true
                       - name: TS_KUBE_SECRET
@@ -29,7 +33,6 @@ pipeline {
     }
     environment {
         EARTHLY_TOKEN = $credentials('EARTHLY_TOKEN')
-        TS_AUTHKEY = $credentials('TAILSCALE_AUTH_KEY')
     }
     stages {
         stage('Install Earthly') {
