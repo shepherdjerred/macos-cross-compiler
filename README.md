@@ -14,6 +14,14 @@ It supports:
 > [!NOTE]
 > This project is focused on supporting newer versions of macOS and C, C++, Fortran, and Rust. Versions older than macOS 13 (Ventura) are not well tested, though they _should_ work fine.
 
+The cross-compilers are available as a Docker image. This is easiest way to distribute the project since there are so many host dependencies. If you are interested in using this without Docker, you should take a look at [osxcross](https://github.com/tpoechtrager/osxcross) which forms the base of this project.
+
+The Docker image is hosted available at [ghcr.io/shepherdjerred/macos-cross-compiler:latest](https://github.com/shepherdjerred/macos-cross-compiler/pkgs/container/macos-cross-compiler).
+
+```bash
+$ docker run ghcr.io/shepherdjerred/macos-cross-compiler:latest
+```
+
 ## Quick Start
 
 Install the requirements below, then follow the instructions in the usage section.
@@ -30,7 +38,7 @@ Install the requirements below, then follow the instructions in the usage sectio
 ```bash
 # Start a Docker container using the Docker image.
 # Replace `$PWD/samples` with the path to the source you want to compile.
-docker run \
+$ docker run \
   -v $PWD/samples:/workspace \
   --rm \
   -it \
@@ -41,29 +49,29 @@ docker run \
 
 # Compile using gcc
 ## targeting darwin arm64
-aarch64-apple-darwin22-gcc hello.c -o hello
-aarch64-apple-darwin22-g++ hello.cpp -o hello
+$ aarch64-apple-darwin22-gcc hello.c -o hello
+$ aarch64-apple-darwin22-g++ hello.cpp -o hello
 ## targeting darwin x86_64
-x86_64-apple-darwin22-gcc hello.c -o hello
-x86_64-apple-darwin22-g++ hello.cpp -o hello
+$ x86_64-apple-darwin22-gcc hello.c -o hello
+$ x86_64-apple-darwin22-g++ hello.cpp -o hello
 
 # Compile using clang
 ## for darwin arm64
-aarch64-apple-darwin22-clang --target=aarch64-apple-darwin22 hello.c -o hello
-aarch64-apple-darwin22-clang --target=aarch64-apple-darwin22 hello.cpp -o hello
+$ aarch64-apple-darwin22-clang --target=aarch64-apple-darwin22 hello.c -o hello
+$ aarch64-apple-darwin22-clang --target=aarch64-apple-darwin22 hello.cpp -o hello
 ## for darwin x86_64
-x86_64-apple-darwin22-clang --target==x86_64-apple-darwin22 hello.c -o hello
-x86_64-apple-darwin22-clang --target==x86_64-apple-darwin22 hello.cpp -o hello
+$ x86_64-apple-darwin22-clang --target==x86_64-apple-darwin22 hello.c -o hello
+$ x86_64-apple-darwin22-clang --target==x86_64-apple-darwin22 hello.cpp -o hello
 
 # Compile using gfortran
 ## for darwin arm64
-aarch64-apple-darwin22-gfortran hello.f90 -o hello
+$ aarch64-apple-darwin22-gfortran hello.f90 -o hello
 ## for darwin x86_64
-x86_64-apple-darwin22-gfortran hello.f90 -o hello
+$ x86_64-apple-darwin22-gfortran hello.f90 -o hello
 
 # Compile using Zig
 ## C targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
-zig cc \
+$ zig cc \
     -target aarch64-macos \
     --sysroot=/sdk \
     -I/sdk/usr/include \
@@ -73,7 +81,7 @@ zig cc \
     -o hello hello.c
 
 ## C++ targeting darwin arm64(change aarch64 -> x86_64 to target amd64)
-zig c++ \
+$ zig c++ \
     -target aarch64-macos \
     --sysroot=/sdk -I/sdk/usr/include \
     -I/sdk/usr/include/c++/v1/ \
@@ -84,8 +92,8 @@ zig c++ \
     -o hello hello.cpp
 
 ## Rust targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
-export CC=zig-cc-aarch64-macos
-cd rust && cargo build --target aarch64-apple-darwin
+$ export CC=zig-cc-aarch64-macos
+$ cd rust && cargo build --target aarch64-apple-darwin
 ```
 
 ### Rust
