@@ -29,6 +29,7 @@ pipeline {
     }
     environment {
         EARTHLY_TOKEN = $credentials('EARTHLY_TOKEN')
+        TS_AUTHKEY = $credentials('TAILSCALE_AUTH_KEY')
     }
     stages {
         stage('Install Earthly') {
