@@ -80,21 +80,8 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-              updateGithubCommitStatus(currentBuild, "continuous-integration/jenkins", BUILD_URL, "Build Pending", 'PENDING')
               sh 'earthly --sat=lamport --org=sjerred --ci --push +ci';
             }
         }
     }
-
-    post {
-        failure {
-            updateGithubCommitStatus(currentBuild, "continuous-integration/jenkins", BUILD_URL, "Build Failed", 'FAILURE')
-        }
-        success {
-            updateGithubCommitStatus(currentBuild, "continuous-integration/jenkins", BUILD_URL, "Build Success", 'SUCCESS')
-        }
-        unstable {
-            updateGithubCommitStatus(currentBuild, "continuous-integration/jenkins", BUILD_URL, "Build Unstable", 'UNSTABLE')
-        }
-      }
 }
