@@ -246,7 +246,7 @@ image:
   ENV PATH=$PATH:/osxcross/bin
   ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   WORKDIR /workspace
-  ENTRYPOINT /bin/bash
+  COMMAND /bin/bash
   SAVE IMAGE --push ghcr.io/shepherdjerred/macos-cross-compiler:latest
 
 test:
