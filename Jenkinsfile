@@ -1,3 +1,13 @@
+void setBuildStatus(String message, String state) {
+  step([
+      $class: "GitHubCommitStatusSetter",
+      reposSource: [$class: "ManuallyEnteredRepositorySource", url: "https://github.com/shepherdjerred/macos-cross-compiler"],
+      contextSource: [$class: "ManuallyEnteredCommitContextSource", context: "ci/jenkins/build-status"],
+      errorHandlers: [[$class: "ChangingBuildStatusErrorHandler", result: "UNSTABLE"]],
+      statusResultSource: [ $class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state]] ]
+  ]);
+}
+
 pipeline {
     agent {
         kubernetes {
@@ -20,8 +30,6 @@ pipeline {
                         value: true
                       - name: TS_KUBE_SECRET
                         value:
-                      - name: TS_EXTRA_ARGS
-                        value: --accept-dns=true
                       - name: TS_USERSPACE
                         value: false
                     - name: earthly
@@ -44,7 +52,14 @@ pipeline {
     stages {
         stage('Build') {
             steps {
+              try {
+                setBuildStatus("Pending", "PENDING");
                 sh 'earthly --sat=lamport --org=sjerred --ci --push +ci';
+              } catch (err) {
+                setBuildStatus("Build failed", "FAILURE");
+                throw err;
+              }
+              setBuildStatus("Build complete", "SUCCESS");
             }
         }
     }
