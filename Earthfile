@@ -15,7 +15,7 @@ xar:
   FROM +deps
   ARG --required target_sdk_version
   RUN apt install -y libxml2-dev libssl-dev zlib1g-dev
-  GIT CLONE https://github.com/tpoechtrager/xar .
+  GIT CLONE --branch 5fa4675419cfec60ac19a9c7f7c2d0e7c831a497 https://github.com/tpoechtrager/xar .
   WORKDIR xar
   ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   RUN ./configure --prefix=/xar
@@ -80,7 +80,7 @@ wrapper:
   ARG --required target_sdk_version
   FROM +deps
   RUN apt install -y
-  GIT CLONE https://github.com/tpoechtrager/osxcross .
+  GIT CLONE --branch=ff8d100f3f026b4ffbe4ce96d8aac4ce06f1278b https://github.com/tpoechtrager/osxcross .
   WORKDIR wrapper
   ENV VERSION=1.4
   ENV SDK_VERSION=$sdk_version
@@ -153,7 +153,7 @@ gcc:
   RUN apt-get install -y --force-yes llvm-dev libxml2-dev uuid-dev libssl-dev bash patch make tar xz-utils bzip2 gzip sed cpio libbz2-dev zlib1g-dev
 
   IF [ $architecture = "aarch64" ]
-    GIT CLONE https://github.com/iains/gcc-13-branch gcc
+    GIT CLONE --branch=46003d70a6411362e9de99ced8242f52129d5f9a https://github.com/iains/gcc-13-branch gcc
   ELSE IF [ $architecture = "x86_64" ]
     GIT CLONE --branch releases/gcc-12.3.0 https://github.com/gcc-mirror/gcc gcc
   ELSE
