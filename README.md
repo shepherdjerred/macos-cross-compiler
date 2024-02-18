@@ -2,17 +2,23 @@
 
 ![A picture of Tux holding a red apple](./assets/256.png)
 
-This project allows you to cross-compile code on Linux that will be executed on macOS.
+This project allows you to cross-compile code on Linux that will be executed on macOS. This can be very useful for CI environments where you want to build for macOS, but you don't want to go through the trouble (and cost) of setting up a macOS environment.
+
+This project formed the basis of my work at [Posit](https://posit.co) (formerly RStudio) to provide macOS binaries for R packages through [Posit Public Package Manager](https://p3m.dev).
 
 It supports:
 
 * ✅ C
 * ✅ C++
 * ✅ Fortran
-* ✅ Rust
+* ✅ Rust (through Zig)
+
+Support for Objective C and Objective C++ may work out-of-the-box, but this is not tested.
 
 > [!NOTE]
 > This project is focused on supporting newer versions of macOS and C, C++, Fortran, and Rust. Versions older than macOS 13 (Ventura) are not well tested, though they _should_ work fine.
+
+macOS system libraries and headers are provided with the Docker image. This should be suitable for compiling standalone macOS programs and possibly native macOS applications.
 
 The cross-compilers are available as a Docker image. This is easiest way to distribute the project since there are so many host dependencies. If you are interested in using this without Docker, you should take a look at [osxcross](https://github.com/tpoechtrager/osxcross) which forms the base of this project.
 
@@ -128,7 +134,7 @@ cargo build --target aarch64-apple-darwin
 The table below shows the name of the executable for each architecture/compiler pair.
 
 > [!NOTE]
-> By default the target kernel version is `darwin22`. You'll need to change `darwin22` if you choose to compile for another kernel version.
+> The target kernel version is `darwin22`. You'll need to build a new Docker image if you want to support a different kernel version.
 
 |          | x86_64                         | aarch64                         |
 |----------|--------------------------------|---------------------------------|
@@ -185,6 +191,8 @@ Complete tool list:
 
 [Code signing](https://developer.apple.com/documentation/security/code_signing_services) (but _not_ [notarizing](https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/)) should be possible with this project, but it is untested. Building [universal binaries](https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary) should also be possible, but again, this is not tested.
 
+The [rcodesign](https://gregoryszorc.com/docs/apple-codesign/stable/) has been recommended as a way to sign and notarize binaries for macOS.
+
 ## Target Compatibility
 
 This project can build for macOS on both x86_64 and aarch64 archtictures, regardless of the host architecture.
@@ -214,6 +222,10 @@ Support for macOS 14 Sonoma has not been extensively tested. macOS 14-specific f
 
 > [!IMPORTANT]
 > This project is tested on modern verisons of macOS, Clang, and GCC. It has not been tested with older versions of these softwares. If you need compatabiltiy with older versions, check out the [osxcross project](https://github.com/tpoechtrager/osxcross).
+
+## Xcode SDK
+
+This Docker image bundles the Xcode SDK from [joseluisq/macosx-sdks](https://github.com/joseluisq/macosx-sdks/).  Please familiarize yourself with the [SDK's terms of service](https://www.apple.com/legal/sla/docs/xcode.pdf).
 
 ## Technical Details
 
