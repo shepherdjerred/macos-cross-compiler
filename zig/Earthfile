@@ -2,13 +2,13 @@ VERSION 0.8
 
 zig:
   ARG TARGETARCH
-  FROM ubuntu:jammy
+  FROM ubuntu:noble
   RUN apt update
   RUN apt install -y wget xz-utils
   IF [ $TARGETARCH = "aarch64" ] || [ $TARGETARCH = "arm64" ]
-    RUN wget -O zig.tar.xz https://ziglang.org/download/0.10.1/zig-linux-aarch64-0.10.1.tar.xz
+    RUN wget -O zig.tar.xz https://ziglang.org/download/0.13.0/zig-linux-aarch64-0.13.0.tar.xz
   ELSE IF [ $TARGETARCH = "x86_64" ] || [ $TARGETARCH = "amd64" ]
-    RUN wget -O zig.tar.xz https://ziglang.org/download/0.10.1/zig-linux-x86_64-0.10.1.tar.xz
+    RUN wget -O zig.tar.xz https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz
   ELSE
     RUN echo "Unsupported architecture: $TARGETARCH"
     RUN exit 1

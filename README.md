@@ -1,6 +1,7 @@
 # macOS Cross Compiler
 
-![A picture of Tux holding a red apple](./assets/256.png)
+> [!CAUTION]
+> If you're using this for a production use-case you should fork this project and build the image yourself
 
 This project allows you to cross-compile code on Linux that will be executed on macOS. This can be very useful for CI environments where you want to build for macOS, but you don't want to go through the trouble (and cost) of setting up a macOS environment.
 
@@ -58,28 +59,20 @@ $ docker run \
 
 # Compile using gcc
 ## targeting darwin arm64
-$ aarch64-apple-darwin22-gcc hello.c -o hello
-$ aarch64-apple-darwin22-g++ hello.cpp -o hello
-## targeting darwin x86_64
-$ x86_64-apple-darwin22-gcc hello.c -o hello
-$ x86_64-apple-darwin22-g++ hello.cpp -o hello
+$ aarch64-apple-darwin24-gcc hello.c -o hello
+$ aarch64-apple-darwin24-g++ hello.cpp -o hello
 
 # Compile using clang
 ## for darwin arm64
-$ aarch64-apple-darwin22-clang --target=aarch64-apple-darwin22 hello.c -o hello
-$ aarch64-apple-darwin22-clang --target=aarch64-apple-darwin22 hello.cpp -o hello
-## for darwin x86_64
-$ x86_64-apple-darwin22-clang --target==x86_64-apple-darwin22 hello.c -o hello
-$ x86_64-apple-darwin22-clang --target==x86_64-apple-darwin22 hello.cpp -o hello
+$ aarch64-apple-darwin24-clang --target=aarch64-apple-darwin24 hello.c -o hello
+$ aarch64-apple-darwin24-clang --target=aarch64-apple-darwin24 hello.cpp -o hello
 
 # Compile using gfortran
 ## for darwin arm64
-$ aarch64-apple-darwin22-gfortran hello.f90 -o hello
-## for darwin x86_64
-$ x86_64-apple-darwin22-gfortran hello.f90 -o hello
+$ aarch64-apple-darwin24-gfortran hello.f90 -o hello
 
 # Compile using Zig
-## C targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
+## C targeting darwin arm64
 $ zig cc \
     -target aarch64-macos \
     --sysroot=/sdk \
@@ -89,7 +82,7 @@ $ zig cc \
     -framework CoreFoundation \
     -o hello hello.c
 
-## C++ targeting darwin arm64(change aarch64 -> x86_64 to target amd64)
+## C++ targeting darwin arm64
 $ zig c++ \
     -target aarch64-macos \
     --sysroot=/sdk -I/sdk/usr/include \
@@ -100,7 +93,7 @@ $ zig c++ \
     -framework CoreFoundation \
     -o hello hello.cpp
 
-## Rust targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
+## Rust targeting darwin arm64
 $ export CC=zig-cc-aarch64-macos
 $ cd rust && cargo build --target aarch64-apple-darwin
 ```
@@ -114,17 +107,11 @@ Support for Rust requires a bit of project configuration.
 [build]
 [target.aarch64-apple-darwin]
 linker = "zig-cc-aarch64-macos"
-
-[target.x86_64-apple-darwin]
-linker = "zig-cc-x86_64-macos"
 ```
 
 Once configured, you can run `cargo` after setting the `CC` variable:
 
 ```bash
-export CC="zig-cc-x86_64-macos"
-cargo build --target x86_64-apple-darwin
-
 export CC="zig-cc-aarch64-macos"
 cargo build --target aarch64-apple-darwin
 ```
@@ -134,15 +121,15 @@ cargo build --target aarch64-apple-darwin
 The table below shows the name of the executable for each architecture/compiler pair.
 
 > [!NOTE]
-> The target kernel version is `darwin22`. You'll need to build a new Docker image if you want to support a different kernel version.
+> The target kernel version is `darwin24`. You'll need to build a new Docker image if you want to support a different kernel version.
 
-|          | x86_64                         | aarch64                         |
-|----------|--------------------------------|---------------------------------|
-| **clang**    | x86_64-apple-darwin22-clang    | aarch64-apple-darwin22-clang    |
-| **clang++**  | x86_64-apple-darwin22-clang++  | aarch64-apple-darwin22-clang++  |
-| **gcc**      | x86_64-apple-darwin22-gcc      | aarch64-apple-darwin22-gcc      |
-| **g++**      | x86_64-apple-darwin22-g++      | aarch64-apple-darwin22-g++      |
-| **gfortran** | x86_64-apple-darwin22-gfortran | aarch64-apple-darwin22-gfortran |
+|          | aarch64                         |
+|----------|---------------------------------|
+| **clang**    | aarch64-apple-darwin24-clang    |
+| **clang++**  | aarch64-apple-darwin24-clang++  |
+| **gcc**      | aarch64-apple-darwin24-gcc      |
+| **g++**      | aarch64-apple-darwin24-g++      |
+| **gfortran** | aarch64-apple-darwin24-gfortran |
 
 The relevant compilers are located at `/osxcross/bin` and `/gcc/bin`. Both these directories are already on the `PATH` in the Docker container.
 
@@ -195,11 +182,10 @@ The [rcodesign](https://gregoryszorc.com/docs/apple-codesign/stable/) has been r
 
 ## Target Compatibility
 
-This project can build for macOS on both x86_64 and aarch64 archtictures, regardless of the host architecture.
+This project can build for macOS on aarch64 archtictures, regardless of the host architecture.
 
 |              | Linux x86_64 | Linux arm64 |
 |--------------|--------------|-------------|
-| **macOS x86_64** | ✅            | ✅           |
 | **macOS aarch64**  | ✅            | ✅           |
 
 > [!NOTE]
@@ -207,9 +193,9 @@ This project can build for macOS on both x86_64 and aarch64 archtictures, regard
 
 This project supports the following languages:
 
-* C (up to C 17)
-* C++ (up to C++ 20)
-* Fortran (up to Fortran 2018)
+* C (up to C 23)
+* C++ (up to C++ 23)
+* Fortran (up to Fortran 2023)
 * Rust (any version)
 
 This project supports the following versions of macOS:
@@ -217,8 +203,10 @@ This project supports the following versions of macOS:
 * ✅ macOS 11 Big Sur
 * ✅ macOS 12 Monterey
 * ✅ macOS 13 Ventura
+* ✅ macOS 14 Sonoma
+* ✅ macOS 15 Seqouia
 
-Support for macOS 14 Sonoma has not been extensively tested. macOS 14-specific features can be added by updating the SDK version. The Docker image uses the 13.0 SDK by default.
+Support for macOS 15 Seqouia has not been extensively tested. macOS 15-specific features can be added by updating the SDK version. The Docker image uses the 15.0 SDK by default.
 
 > [!IMPORTANT]
 > This project is tested on modern verisons of macOS, Clang, and GCC. It has not been tested with older versions of these softwares. If you need compatabiltiy with older versions, check out the [osxcross project](https://github.com/tpoechtrager/osxcross).

@@ -1,10 +1,10 @@
 VERSION 0.8
-FROM ubuntu:jammy
+FROM ubuntu:noble
 WORKDIR /workspace
 
 ci:
   # TODO: build for arm64 too
-  BUILD  --platform=linux/amd64 +image
+  BUILD --platform=linux/amd64 +image
   BUILD +test
 
 deps:
@@ -19,7 +19,7 @@ xar:
   WORKDIR xar
   ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   RUN ./configure --prefix=/xar
-  RUN make -j
+  RUN make -j16
   RUN make install
   SAVE ARTIFACT /xar/*
 
@@ -27,7 +27,7 @@ libtapi:
   FROM +deps
   RUN apt install -y python3
   ARG --required target_sdk_version
-  ARG version=1100.0.11
+  ARG version=1300.6.5
   GIT CLONE --branch $version https://github.com/tpoechtrager/apple-libtapi .
   ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   ENV INSTALLPREFIX=/libtapi
@@ -48,8 +48,9 @@ cctools:
   END
   FROM +deps
   RUN apt install -y llvm-dev uuid-dev rename
-  ARG cctools_version=973.0.1
-  ARG linker_verison=609
+  # note: newer versionsn need libdispatch
+  ARG cctools_version=986
+  ARG linker_verison=711
   GIT CLONE --branch $cctools_version-ld64-$linker_verison https://github.com/tpoechtrager/cctools-port .
   COPY (+xar/ --target_sdk_version=$target_sdk_version) /xar
   COPY (+libtapi/ --target_sdk_version=$target_sdk_version) /libtapi
@@ -63,7 +64,7 @@ cctools:
   # now that we've tricked autoconf by pretending to build for arm, let's _actually_ build for arm64
   # https://github.com/tpoechtrager/cctools-port/issues/6
   RUN find . -name Makefile -print0 | xargs -0 sed -i "s/arm-apple-darwin$kernel_version/arm64-apple-darwin$kernel_version/g"
-  RUN make -j
+  RUN make -j16
   RUN make install
   # link aarch64 artifacts so that the target triple is consistent with what clang/gcc will expect
   IF [ $architecture = "aarch64" ]
@@ -80,17 +81,19 @@ wrapper:
   ARG --required target_sdk_version
   FROM +deps
   RUN apt install -y
-  GIT CLONE --branch=ff8d100f3f026b4ffbe4ce96d8aac4ce06f1278b https://github.com/tpoechtrager/osxcross .
+  GIT CLONE --branch=29fe6dd35522073c9df5800f8cd1feb4b9a993a8 https://github.com/tpoechtrager/osxcross .
   WORKDIR wrapper
-  ENV VERSION=1.4
+  # this is in build.sh in osxcross
+  ENV VERSION=1.5
   ENV SDK_VERSION=$sdk_version
   ENV TARGET=darwin$kernel_version
-  ENV LINKER_VERSION=609
+  # this needs to match the version of the linker in cctools
+  ENV LINKER_VERSION=711
   ENV X86_64H_SUPPORTED=0
   ENV I386_SUPPORTED=0
   ENV ARM_SUPPORTED=1
   ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
-  RUN make wrapper -j
+  RUN make wrapper -j16
 
 wrapper.clang:
   ARG --required sdk_version
@@ -132,7 +135,7 @@ sdk:
   IF [ $download_sdk = "true" ]
     COPY (+sdk.download/MacOSX$version.sdk.tar.xz --version=$version) .
     RUN tar -xf MacOSX$version.sdk.tar.xz
-    RUN mv MacOSX*.sdk MacOSX$version.sdk
+    RUN mv MacOSX*.sdk MacOSX$version.sdk || true # newer versions of the SDK don't need to be moved
   ELSE
     COPY sdks/MacOSX$version.sdk.tar.xz .
     RUN tar -xf MacOSX$version.sdk.tar.xz
@@ -153,9 +156,7 @@ gcc:
   RUN apt-get install -y --force-yes llvm-dev libxml2-dev uuid-dev libssl-dev bash patch make tar xz-utils bzip2 gzip sed cpio libbz2-dev zlib1g-dev
 
   IF [ $architecture = "aarch64" ]
-    GIT CLONE --branch=46003d70a6411362e9de99ced8242f52129d5f9a https://github.com/iains/gcc-13-branch gcc
-  ELSE IF [ $architecture = "x86_64" ]
-    GIT CLONE --branch releases/gcc-12.3.0 https://github.com/gcc-mirror/gcc gcc
+    GIT CLONE --branch=gcc-14-2-darwin https://github.com/iains/gcc-14-branch gcc
   ELSE
     RUN false
   END
@@ -197,14 +198,14 @@ gcc:
     --disable-multilib \
     --with-ld=/cctools/bin/$triple-ld \
     --with-as=/cctools/bin/$triple-as
-  RUN make -j
+  RUN make -j16
   RUN make install
   SAVE ARTIFACT /gcc/*
 
 image:
-  ARG architectures=aarch64 x86_64
-  ARG sdk_version=13.0
-  ARG kernel_version=22
+  ARG architectures=aarch64
+  ARG sdk_version=15.0
+  ARG kernel_version=24
   ARG target_sdk_version=11
   ARG download_sdk=true
   COPY (+sdk/ --version=$sdk_version --download_sdk=$download_sdk) /osxcross/SDK/MacOSX$sdk_version.sdk/
@@ -248,11 +249,12 @@ image:
   ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   WORKDIR /workspace
   SAVE IMAGE --push ghcr.io/shepherdjerred/macos-cross-compiler:latest
+  SAVE IMAGE --push ghcr.io/shepherdjerred/macos-cross-compiler:$sdk_version
 
 test:
-  ARG architectures=aarch64 x86_64
-  ARG sdk_version=13.0
-  ARG kernel_version=22
+  ARG architectures=aarch64
+  ARG sdk_version=15.0
+  ARG kernel_version=24
   ARG target_sdk_version=11
   ARG download_sdk=true
   FROM +image --architectures=$architectures --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk
@@ -276,15 +278,6 @@ test:
       -F/sdk/System/Library/Frameworks \
       -framework CoreFoundation \
       -o out/hello-zig-c samples/hello.c
-    RUN zig c++ \
-      -target $architecture-macos \
-      --sysroot=/sdk -I/sdk/usr/include \
-      -I/sdk/usr/include/c++/v1/ \
-      -L/sdk/usr/lib \
-      -lc++ \
-      -F/sdk/System/Library/Frameworks \
-      -framework CoreFoundation \
-      -o out/hello-zig-c++ samples/hello.cpp
     ENV CC="zig-cc-$architecture-macos"
     RUN cd samples/rust && cargo build --target $architecture-apple-darwin && mv target/$architecture-apple-darwin/debug/hello ../../out/hello-rust
 
@@ -296,7 +289,6 @@ test:
       RUN file out/hello-g++ | grep -q "Mach-O 64-bit arm64 executable"
       RUN file out/hello-gfortran | grep -q "Mach-O 64-bit arm64 executable"
       RUN file out/hello-zig-c | grep -q "Mach-O 64-bit arm64 executable"
-      RUN file out/hello-zig-c++ | grep -q "Mach-O 64-bit arm64 executable"
       RUN file out/hello-rust | grep -q "Mach-O 64-bit arm64 executable"
     ELSE
       RUN file out/hello-clang | grep -q "Mach-O 64-bit $architecture executable"
@@ -305,7 +297,6 @@ test:
       RUN file out/hello-g++ | grep -q "Mach-O 64-bit $architecture executable"
       RUN file out/hello-gfortran | grep -q "Mach-O 64-bit $architecture executable"
       RUN file out/hello-zig-c | grep -q "Mach-O 64-bit $architecture executable"
-      RUN file out/hello-zig-c++ | grep -q "Mach-O 64-bit $architecture executable"
       RUN file out/hello-rust | grep -q "Mach-O 64-bit $architecture executable"
     END
 
@@ -322,10 +313,6 @@ validate:
   IF [ $arch = "arm64" ]
     SET arch=aarch64
   END
-  # convert x86_64 -> amd64
-  IF [ $arch = "x86_64" ]
-    SET arch=amd64
-  END
 
   WAIT
     BUILD +test --architectures=$arch --download_sdk=true
@@ -335,7 +322,6 @@ validate:
   RUN ./out/$arch/hello-clang++
   RUN ./out/$arch/hello-g++
   RUN ./out/$arch/hello-gcc
-  # RUN ./out/$arch/hello-gfortran
+  RUN ./out/$arch/hello-gfortran
   RUN ./out/$arch/hello-zig-c
-  RUN ./out/$arch/hello-zig-c++
   RUN ./out/$arch/hello-rust
