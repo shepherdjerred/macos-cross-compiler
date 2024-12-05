@@ -182,7 +182,7 @@ The [rcodesign](https://gregoryszorc.com/docs/apple-codesign/stable/) has been r
 
 ## Target Compatibility
 
-This project can build for macOS on aarch64 archtictures, regardless of the host architecture.
+This project can build for macOS on aarch64 architecture, regardless of the host architecture.
 
 |              | Linux x86_64 | Linux arm64 |
 |--------------|--------------|-------------|
@@ -206,7 +206,7 @@ This project supports the following versions of macOS:
 * ✅ macOS 14 Sonoma
 * ✅ macOS 15 Seqouia
 
-Support for macOS 15 Seqouia has not been extensively tested. macOS 15-specific features can be added by updating the SDK version. The Docker image uses the 15.0 SDK by default.
+Support for macOS 15 Seqouia has not been extensively tested. The Docker image uses the 15.0 SDK by default.
 
 > [!IMPORTANT]
 > This project is tested on modern verisons of macOS, Clang, and GCC. It has not been tested with older versions of these softwares. If you need compatabiltiy with older versions, check out the [osxcross project](https://github.com/tpoechtrager/osxcross).
