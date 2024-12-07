@@ -3,6 +3,9 @@
 ## 2024 12 07
 
 - Re-add support for targeting x86_64
+- Change default target from `11` to `11.0.0`
+- Update cctools from `986` -> `1010.6`
+- Update linker from `711` -> `951.9`
 
 ## 2024 12 04
 

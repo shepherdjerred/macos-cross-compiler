@@ -24,6 +24,19 @@ xar:
   RUN make install
   SAVE ARTIFACT /xar/*
 
+libdispatch:
+  FROM +deps
+  ARG --required target_sdk_version
+  ARG version=fdf3fc85a9557635668c78801d79f10161d83f12
+  GIT CLONE --branch $version https://github.com/tpoechtrager/apple-libdispatch .
+  ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
+  ENV TARGETDIR=/libdispatch
+  RUN mkdir -p build
+  WORKDIR build
+  RUN CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=$TARGETDIR
+  RUN make install -j$cores
+  SAVE ARTIFACT /libdispatch/*
+
 libtapi:
   FROM +deps
   RUN apt install -y python3
@@ -49,18 +62,20 @@ cctools:
   END
   FROM +deps
   RUN apt install -y llvm-dev uuid-dev rename
-  # note: newer versionsn need libdispatch
-  ARG cctools_version=986
-  ARG linker_verison=711
+  ARG cctools_version=1010.6
+  ARG linker_verison=951.9
   GIT CLONE --branch $cctools_version-ld64-$linker_verison https://github.com/tpoechtrager/cctools-port .
   COPY (+xar/ --target_sdk_version=$target_sdk_version) /xar
   COPY (+libtapi/ --target_sdk_version=$target_sdk_version) /libtapi
+  COPY (+libdispatch/ --target_sdk_version=$target_sdk_version) /libdispatch
   WORKDIR cctools
   ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   RUN ./configure \
     --prefix=/cctools \
     --with-libtapi=/libtapi \
     --with-libxar=/libxar \
+    --with-libdispatch=/libdispatch \
+    --with-libblocksruntime=/libdispatch \
     --target=$triple
   # now that we've tricked autoconf by pretending to build for arm, let's _actually_ build for arm64
   # https://github.com/tpoechtrager/cctools-port/issues/6
@@ -89,7 +104,7 @@ wrapper:
   ENV SDK_VERSION=$sdk_version
   ENV TARGET=darwin$kernel_version
   # this needs to match the version of the linker in cctools
-  ENV LINKER_VERSION=711
+  ENV LINKER_VERSION=951.9
   ENV X86_64H_SUPPORTED=0
   ENV I386_SUPPORTED=0
   ENV ARM_SUPPORTED=1
@@ -176,9 +191,11 @@ gcc:
   # TODO: I think we can remove these
   COPY (+xar/ --target_sdk_version=$target_sdk_version) /sdk/usr
   COPY (+libtapi/ --target_sdk_version=$target_sdk_version) /sdk/usr
+  COPY (+libdispatch/ --target_sdk_version=$target_sdk_version) /sdk/usr
 
   COPY (+xar/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
   COPY (+libtapi/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
+  COPY (+libdispatch/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
   RUN ldconfig
 
   # GCC requires that you build in a directory that is not a subdirectory of the source code
@@ -209,7 +226,7 @@ image:
   ARG architectures=aarch64 x86_64
   ARG sdk_version=15.0
   ARG kernel_version=24
-  ARG target_sdk_version=11
+  ARG target_sdk_version=11.0.0
   ARG download_sdk=true
   COPY (+sdk/ --version=$sdk_version --download_sdk=$download_sdk) /osxcross/SDK/MacOSX$sdk_version.sdk/
   RUN ln -s /osxcross/SDK/MacOSX$sdk_version.sdk/ /sdk
@@ -243,6 +260,7 @@ image:
 
   COPY (+xar/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
   COPY (+libtapi/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
+  COPY (+libdispatch/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
   RUN ldconfig
 
   ENV PATH=$PATH:/usr/local/bin
@@ -258,7 +276,7 @@ test:
   ARG architectures=aarch64 x86_64
   ARG sdk_version=15.0
   ARG kernel_version=24
-  ARG target_sdk_version=11
+  ARG target_sdk_version=11.0.0
   ARG download_sdk=true
   FROM +image --architectures=$architectures --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk
   COPY ./samples/ samples/
@@ -322,13 +340,14 @@ validate:
   END
 
   WAIT
-    BUILD +test --architectures=$arch --download_sdk=true
+    BUILD +test
   END
 
   RUN ./out/$arch/hello-clang
   RUN ./out/$arch/hello-clang++
   RUN ./out/$arch/hello-g++
   RUN ./out/$arch/hello-gcc
+  # note: required fortran to be installed on your macOS device
   RUN ./out/$arch/hello-gfortran
   RUN ./out/$arch/hello-zig-c
   RUN ./out/$arch/hello-rust
