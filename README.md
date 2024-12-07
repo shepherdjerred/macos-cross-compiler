@@ -23,13 +23,6 @@ The cross-compilers are available as a Docker image. This is easiest way to dist
 
 The Docker image is available at [ghcr.io/shepherdjerred/macos-cross-compiler](https://github.com/shepherdjerred/macos-cross-compiler/pkgs/container/macos-cross-compiler).
 
-```bash
-# Run the container
-# Note: You'll probably want to bind-mount some files to compile.
-# The `samples` directory has some Hello World programs.
-$ docker run ghcr.io/shepherdjerred/macos-cross-compiler:latest /bin/bash
-```
-
 ## Quick Start
 
 Install the requirements below, then follow the instructions in the usage section.
@@ -46,7 +39,7 @@ Install the requirements below, then follow the instructions in the usage sectio
 ```bash
 # Start a Docker container using the Docker image.
 # Replace `$PWD/samples` with the path to the source you want to compile.
-$ docker run \
+$ docker run --platform=linux/amd64 \
   -v $PWD/samples:/workspace \
   --rm \
   -it \
@@ -66,10 +59,10 @@ $ x86_64-apple-darwin24-g++ hello.cpp -o hello
 # Compile using clang
 ## for darwin arm64
 $ aarch64-apple-darwin24-clang --target=aarch64-apple-darwin24 hello.c -o hello
-$ aarch64-apple-darwin24-clang --target=aarch64-apple-darwin24 hello.cpp -o hello
+$ aarch64-apple-darwin24-clang++ --target=aarch64-apple-darwin24 hello.cpp -o hello
 ## for darwin x86_64
-$ x86_64-apple-darwin24-clang --target==x86_64-apple-darwin24 hello.c -o hello
-$ x86_64-apple-darwin24-clang --target==x86_64-apple-darwin24 hello.cpp -o hello
+$ x86_64-apple-darwin24-clang --target=x86_64-apple-darwin24 hello.c -o hello
+$ x86_64-apple-darwin24-clang++ --target=x86_64-apple-darwin24 hello.cpp -o hello
 
 # Compile using gfortran
 ## for darwin arm64

@@ -256,6 +256,7 @@ image:
     COPY (+gcc/$triple/include --architecture=$architecture --sdk_version=$sdk_version --kernel_version=$kernel_version --target_sdk_version=$target_sdk_version --download_sdk=$download_sdk) /usr/local/include
     COPY ./zig/zig-cc-$architecture-macos /usr/local/bin/
     RUN rustup target add $architecture-apple-darwin
+    ENV triple=""
   END
 
   COPY (+xar/lib --target_sdk_version=$target_sdk_version) /usr/local/lib
