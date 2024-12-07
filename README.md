@@ -5,8 +5,6 @@
 
 This project allows you to cross-compile code on Linux that will be executed on macOS. This can be very useful for CI environments where you want to build for macOS, but you don't want to go through the trouble (and cost) of setting up a macOS environment.
 
-This project formed the basis of my work at [Posit](https://posit.co) (formerly RStudio) to provide macOS binaries for R packages through [Posit Public Package Manager](https://p3m.dev).
-
 It supports:
 
 * ✅ C
