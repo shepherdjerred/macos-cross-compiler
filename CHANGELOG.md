@@ -24,6 +24,6 @@
   - Seemed to have an issue with header search paths
   - I doubt anyone uses this; clang + gcc are enough for C++ and zig-cc is enough for Rust
 
-## 2024 06 13
+## 2023 06 13
 
 - Initial version
