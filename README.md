@@ -245,6 +245,11 @@ The Zig and Rust portion were informed by these resources:
 
 The Docker images for this repository are built with [Earthly](https://earthly.dev).
 
+> [!TIP]
+> Building GCC is compute and memory intense. You can adjust the number of parallel tasks by passing a `--cores=<number>` argument to any command, e.g. `earthly +image --cores=4`.
+> In my experience you'll need a lot of memory if you want to use all of your cores.
+> I've had success by setting this value to about half as many cores as my CPU. You should lower the value if your machine stalls.
+
 ```bash
 # Create a Docker image tagged as `shepherdjerred/macos-cross-compiler`
 # The first run will take ~20 minutes on an M1 MacBook.

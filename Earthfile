@@ -1,6 +1,7 @@
 VERSION 0.8
 FROM ubuntu:noble
 WORKDIR /workspace
+ARG --global cores=16
 
 ci:
   # TODO: build for arm64 too
@@ -19,7 +20,7 @@ xar:
   WORKDIR xar
   ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
   RUN ./configure --prefix=/xar
-  RUN make -j16
+  RUN make -j$cores
   RUN make install
   SAVE ARTIFACT /xar/*
 
@@ -64,7 +65,7 @@ cctools:
   # now that we've tricked autoconf by pretending to build for arm, let's _actually_ build for arm64
   # https://github.com/tpoechtrager/cctools-port/issues/6
   RUN find . -name Makefile -print0 | xargs -0 sed -i "s/arm-apple-darwin$kernel_version/arm64-apple-darwin$kernel_version/g"
-  RUN make -j16
+  RUN make -j$cores
   RUN make install
   # link aarch64 artifacts so that the target triple is consistent with what clang/gcc will expect
   IF [ $architecture = "aarch64" ]
@@ -93,7 +94,7 @@ wrapper:
   ENV I386_SUPPORTED=0
   ENV ARM_SUPPORTED=1
   ENV MACOSX_DEPLOYMENT_TARGET=$target_sdk_version
-  RUN make wrapper -j16
+  RUN make wrapper -j$cores
 
 wrapper.clang:
   ARG --required sdk_version
@@ -200,7 +201,7 @@ gcc:
     --disable-multilib \
     --with-ld=/cctools/bin/$triple-ld \
     --with-as=/cctools/bin/$triple-as
-  RUN make -j16
+  RUN make -j$cores
   RUN make install
   SAVE ARTIFACT /gcc/*
 
