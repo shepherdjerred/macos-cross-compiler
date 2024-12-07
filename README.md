@@ -226,6 +226,7 @@ This repository is essentially a wrapper around the following projects:
 * <https://github.com/tpoechtrager/apple-libtapi>
 * <https://github.com/tpoechtrager/cctools-port>
 * <https://github.com/tpoechtrager/xar>
+* <https://github.com/tpoechtrager/apple-libdispatch/>
 * <https://github.com/iains/gcc-darwin-arm64>
 
 These resources were helpful when working on this project:
