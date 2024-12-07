@@ -61,18 +61,26 @@ $ docker run \
 ## targeting darwin arm64
 $ aarch64-apple-darwin24-gcc hello.c -o hello
 $ aarch64-apple-darwin24-g++ hello.cpp -o hello
+## targeting darwin x86_64
+$ x86_64-apple-darwin24-gcc hello.c -o hello
+$ x86_64-apple-darwin24-g++ hello.cpp -o hello
 
 # Compile using clang
 ## for darwin arm64
 $ aarch64-apple-darwin24-clang --target=aarch64-apple-darwin24 hello.c -o hello
 $ aarch64-apple-darwin24-clang --target=aarch64-apple-darwin24 hello.cpp -o hello
+## for darwin x86_64
+$ x86_64-apple-darwin24-clang --target==x86_64-apple-darwin24 hello.c -o hello
+$ x86_64-apple-darwin24-clang --target==x86_64-apple-darwin24 hello.cpp -o hello
 
 # Compile using gfortran
 ## for darwin arm64
 $ aarch64-apple-darwin24-gfortran hello.f90 -o hello
+## for darwin x86_64
+$ x86_64-apple-darwin24-gfortran hello.f90 -o hello
 
 # Compile using Zig
-## C targeting darwin arm64
+## C targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
 $ zig cc \
     -target aarch64-macos \
     --sysroot=/sdk \
@@ -82,18 +90,7 @@ $ zig cc \
     -framework CoreFoundation \
     -o hello hello.c
 
-## C++ targeting darwin arm64
-$ zig c++ \
-    -target aarch64-macos \
-    --sysroot=/sdk -I/sdk/usr/include \
-    -I/sdk/usr/include/c++/v1/ \
-    -L/sdk/usr/lib \
-    -lc++ \
-    -F/sdk/System/Library/Frameworks \
-    -framework CoreFoundation \
-    -o hello hello.cpp
-
-## Rust targeting darwin arm64
+## Rust targeting darwin arm64 (change aarch64 -> x86_64 to target amd64)
 $ export CC=zig-cc-aarch64-macos
 $ cd rust && cargo build --target aarch64-apple-darwin
 ```
@@ -107,11 +104,17 @@ Support for Rust requires a bit of project configuration.
 [build]
 [target.aarch64-apple-darwin]
 linker = "zig-cc-aarch64-macos"
+
+[target.x86_64-apple-darwin]
+linker = "zig-cc-x86_64-macos"
 ```
 
 Once configured, you can run `cargo` after setting the `CC` variable:
 
 ```bash
+export CC="zig-cc-x86_64-macos"
+cargo build --target x86_64-apple-darwin
+
 export CC="zig-cc-aarch64-macos"
 cargo build --target aarch64-apple-darwin
 ```
@@ -182,10 +185,11 @@ The [rcodesign](https://gregoryszorc.com/docs/apple-codesign/stable/) has been r
 
 ## Target Compatibility
 
-This project can build for macOS on aarch64 architecture, regardless of the host architecture.
+This project can build for macOS on both x86_64 and aarch64 archtictures, regardless of the host architecture.
 
 |              | Linux x86_64 | Linux arm64 |
 |--------------|--------------|-------------|
+| **macOS x86_64** | ✅            | ✅           |
 | **macOS aarch64**  | ✅            | ✅           |
 
 > [!NOTE]

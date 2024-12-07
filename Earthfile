@@ -157,6 +157,8 @@ gcc:
 
   IF [ $architecture = "aarch64" ]
     GIT CLONE --branch=gcc-14-2-darwin https://github.com/iains/gcc-14-branch gcc
+  ELSE IF [ $architecture = "x86_64" ]
+    GIT CLONE --branch=gcc-14-2-darwin https://github.com/iains/gcc-14-branch gcc
   ELSE
     RUN false
   END
@@ -203,7 +205,7 @@ gcc:
   SAVE ARTIFACT /gcc/*
 
 image:
-  ARG architectures=aarch64
+  ARG architectures=aarch64 x86_64
   ARG sdk_version=15.0
   ARG kernel_version=24
   ARG target_sdk_version=11
@@ -252,7 +254,7 @@ image:
   SAVE IMAGE --push ghcr.io/shepherdjerred/macos-cross-compiler:$sdk_version
 
 test:
-  ARG architectures=aarch64
+  ARG architectures=aarch64 x86_64
   ARG sdk_version=15.0
   ARG kernel_version=24
   ARG target_sdk_version=11
@@ -312,6 +314,10 @@ validate:
   # convert arm64 -> aarch64
   IF [ $arch = "arm64" ]
     SET arch=aarch64
+  END
+  # convert x86_64 -> amd64
+  IF [ $arch = "x86_64" ]
+    SET arch=amd64
   END
 
   WAIT

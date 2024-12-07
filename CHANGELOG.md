@@ -1,5 +1,9 @@
 # Changelog
 
+## 2024 12 07
+
+- Re-add support for targeting x86_64
+
 ## 2024 12 04
 
 - Update image from `jammy` -> `noble`
