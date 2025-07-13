@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd dagger
+          cd .dagger
           bun install
 
       - name: Install Dagger CLI
@@ -33,7 +33,7 @@ jobs:
           GHCR_USERNAME: ${{ github.actor }}
           GHCR_PASSWORD: ${{ github.token }}
         run: |
-          cd dagger
+          cd .dagger
           dagger call ci \
             --source=.. \
             --ghcr-username="$GHCR_USERNAME" \
@@ -42,7 +42,7 @@ jobs:
       - name: Run Dagger CI pipeline (dev)
         if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
         run: |
-          cd dagger
+          cd .dagger
           dagger call ci \
             --source=..
 
