@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  dagger-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: |
+          cd dagger
+          bun install
+
+      - name: Install Dagger CLI
+        run: |
+          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Run Dagger CI pipeline (prod)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_PASSWORD: ${{ github.token }}
+        run: |
+          cd dagger
+          dagger call ci \
+            --source=.. \
+            --ghcr-username="$GHCR_USERNAME" \
+            --ghcr-password=env://GHCR_PASSWORD
+
+      - name: Run Dagger CI pipeline (dev)
+        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+        run: |
+          cd dagger
+          dagger call ci \
+            --source=..
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-compiler-test-results
+          path: out/
+          retention-days: 30
+
+permissions:
+  contents: read
+  packages: write
