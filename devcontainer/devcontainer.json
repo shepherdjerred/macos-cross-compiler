@@ -1,4 +1,0 @@
-{
-  "image": "ghcr.io/shepherdjerred/dotfiles",
-  "postCreateCommand": ".devcontainer/post-install.sh > /tmp/post-install.sh 2>&1"
-}
